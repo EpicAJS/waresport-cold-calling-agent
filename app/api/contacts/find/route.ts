@@ -1,6 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { randomUUID } from "crypto";
-import { getContacts } from "@/lib/store";
+import { eq } from "drizzle-orm";
+import { db, contacts } from "@/lib/db";
+import { authed } from "@/lib/auth";
+import { inferState } from "@/lib/time";
+
+export const maxDuration = 60;
 
 const SERP_KEY = process.env.SERP_API_KEY ?? "";
 
@@ -235,16 +240,15 @@ function overpassToContact(el: any, city: string): Record<string, any> | null {
   const address = street ? `${housenum} ${street}`.trim() : null;
   return {
     id: randomUUID(),
-    club_name: name,
+    clubName: name,
     phone,
     email,
     website,
     address,
     city,
-    state: el.tags?.["addr:state"] ?? "",
+    state: inferState({ state: el.tags?.["addr:state"], address, city }) ?? "",
     source: "openstreetmap",
     verified: false,
-    created_at: new Date().toISOString(),
     notes: el.tags?.sport ?? el.tags?.leisure ?? "",
     rating: null,
     reviews: null,
@@ -262,9 +266,9 @@ function addIfNew(
   out: any[]
 ) {
   if (contact.phone && existingPhones.has(contact.phone)) return false;
-  if (existingNames.has(normalizeName(contact.club_name))) return false;
+  if (existingNames.has(normalizeName(contact.clubName))) return false;
   if (contact.phone && seenPhones.has(contact.phone)) return false;
-  const nameKey = normalizeName(contact.club_name);
+  const nameKey = normalizeName(contact.clubName);
   if (seenNames.has(nameKey)) return false;
   if (contact.phone) seenPhones.add(contact.phone);
   seenNames.add(nameKey);
@@ -274,7 +278,7 @@ function addIfNew(
 
 // ─── Main handler ───────────────────────────────────────────────────────────
 
-export async function GET(req: NextRequest) {
+export const GET = authed(async (req, _ctx, user) => {
   const query = req.nextUrl.searchParams.get("query") ?? "";
   const location = req.nextUrl.searchParams.get("city") ?? "";
 
@@ -282,9 +286,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "query and city are required" }, { status: 400 });
   }
 
-  const existingContacts = getContacts();
+  const existingContacts = await db
+    .select({ phone: contacts.phone, clubName: contacts.clubName })
+    .from(contacts)
+    .where(eq(contacts.ownerId, user.id));
   const existingPhones = new Set(existingContacts.map((c) => normalizePhone(c.phone)).filter(Boolean));
-  const existingNames = new Set(existingContacts.map((c) => normalizeName(c.club_name)));
+  const existingNames = new Set(existingContacts.map((c) => normalizeName(c.clubName)));
 
   const seenPhones = new Set<string>();
   const seenNames = new Set<string>();
@@ -344,16 +351,15 @@ export async function GET(req: NextRequest) {
       : null;
     return {
       id: randomUUID(),
-      club_name: p.title ?? p.name ?? "",
+      clubName: p.title ?? p.name ?? "",
       phone: normalizePhone(p.phone),
       email,
       website: p.website ?? null,
       address: p.address ?? null,
       city: location,
-      state: "",
+      state: inferState({ address: p.address, city: location }) ?? "",
       source: "google_places",
       verified: true,
-      created_at: new Date().toISOString(),
       notes: p.type ?? "",
       rating: p.rating ?? null,
       reviews: p.reviews ?? null,
@@ -372,4 +378,4 @@ export async function GET(req: NextRequest) {
     osm_count: osmContacts.length,
     serp_exhausted: serpExhausted,
   });
-}
+});

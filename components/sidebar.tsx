@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Users,
   Megaphone,
   Phone,
+  CalendarCheck,
+  Mail,
   BarChart3,
   Settings,
+  LogOut,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -18,12 +21,23 @@ const nav = [
   { href: "/contacts", label: "Find Contacts", icon: Users },
   { href: "/campaigns", label: "Campaigns", icon: Megaphone },
   { href: "/calls", label: "Calls", icon: Phone },
+  { href: "/demos", label: "Demos", icon: CalendarCheck },
+  { href: "/emails", label: "Emails", icon: Mail },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
-export default function Sidebar() {
+type Props = { user: { name: string; email: string; role: string } };
+
+export default function Sidebar({ user }: Props) {
   const pathname = usePathname();
+  const router = useRouter();
+
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
     <aside className="w-60 bg-gray-100 border-r border-gray-200 flex flex-col h-full shrink-0">
@@ -59,14 +73,18 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="px-4 py-4 border-t border-gray-200 space-y-2">
+      <div className="px-4 py-4 border-t border-gray-200">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-gray-500 text-xs">Bland.ai connected</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-500" />
-          <span className="text-gray-500 text-xs">SerpAPI — club search</span>
+          <div className="w-8 h-8 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs font-semibold shrink-0">
+            {user.name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase()}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800 truncate">{user.name}</p>
+            <p className="text-xs text-gray-500 truncate">{user.role === "admin" ? "Admin" : "Sales rep"}</p>
+          </div>
+          <button onClick={logout} title="Sign out" className="p-1.5 text-gray-400 hover:text-gray-700 rounded-lg hover:bg-gray-200">
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </div>
     </aside>

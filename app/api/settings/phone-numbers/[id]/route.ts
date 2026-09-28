@@ -1,7 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { deletePhoneNumber } from "@/lib/store";
+import { NextResponse } from "next/server";
+import { eq } from "drizzle-orm";
+import { db, phoneNumbers } from "@/lib/db";
+import { authed } from "@/lib/auth";
 
-export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  deletePhoneNumber(params.id);
+export const DELETE = authed(async (_req, { params }) => {
+  await db.delete(phoneNumbers).where(eq(phoneNumbers.id, params.id));
   return NextResponse.json({ ok: true });
-}
+}, { admin: true });

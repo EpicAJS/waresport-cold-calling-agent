@@ -1,58 +1,43 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCalls, getCallOutcomes } from "@/lib/store";
-import { getCall, formatTranscript, inferOutcome } from "@/lib/bland";
+import { NextResponse } from "next/server";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
+import { db, calls, campaigns, contacts, users } from "@/lib/db";
+import { authed, ownedBy } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
-  const campaignId = req.nextUrl.searchParams.get("campaign_id") ?? undefined;
-  const stored = getCalls(campaignId);
-
-  if (stored.length === 0) return NextResponse.json([]);
-
-  const overrides = getCallOutcomes();
-
-  const enriched = await Promise.all(
-    stored.map(async (s) => {
-      try {
-        const live = await getCall(s.bland_call_id);
-        const outcome = overrides[s.id] ?? inferOutcome(live);
-        return {
-          id: s.id,
-          bland_call_id: s.bland_call_id,
-          campaign_id: s.campaign_id,
-          campaign_name: s.campaign_name,
-          contact_id: s.contact_id,
-          club_name: s.club_name,
-          phone: s.phone,
-          status: live.completed ? "completed" : "in-progress",
-          outcome,
-          duration: Math.round((live.call_length ?? 0) * 60),
-          recording_url: live.recording_url ?? null,
-          transcript: formatTranscript(live.transcripts),
-          summary: live.summary ?? null,
-          started_at: s.created_at,
-          ended_at: live.ended_at ?? null,
-        };
-      } catch {
-        return {
-          id: s.id,
-          bland_call_id: s.bland_call_id,
-          campaign_id: s.campaign_id,
-          campaign_name: s.campaign_name,
-          contact_id: s.contact_id,
-          club_name: s.club_name,
-          phone: s.phone,
-          status: "initiated",
-          outcome: "pending",
-          duration: 0,
-          recording_url: null,
-          transcript: null,
-          summary: null,
-          started_at: s.created_at,
-          ended_at: null,
-        };
-      }
-    })
+export const GET = authed(async (req, _ctx, user) => {
+  const campaignId = req.nextUrl.searchParams.get("campaign_id");
+  const where = and(
+    ownedBy(user, calls.ownerId),
+    ne(calls.status, "cancelled"),
+    campaignId ? eq(calls.campaignId, campaignId) : undefined,
   );
-
-  return NextResponse.json(enriched);
-}
+  const rows = await db
+    .select({
+      id: calls.id,
+      campaignId: calls.campaignId,
+      campaignName: campaigns.name,
+      contactId: calls.contactId,
+      clubName: contacts.clubName,
+      phone: contacts.phone,
+      email: contacts.email,
+      stage: contacts.stage,
+      ownerName: users.name,
+      attempt: calls.attempt,
+      status: calls.status,
+      outcome: sql<string>`coalesce(${calls.outcomeOverride}, ${calls.outcome})`,
+      duration: calls.durationSec,
+      summary: calls.summary,
+      transcript: calls.transcript,
+      recordingUrl: calls.recordingUrl,
+      error: calls.error,
+      scheduledFor: calls.scheduledFor,
+      endedAt: calls.endedAt,
+    })
+    .from(calls)
+    .innerJoin(contacts, eq(calls.contactId, contacts.id))
+    .innerJoin(campaigns, eq(calls.campaignId, campaigns.id))
+    .innerJoin(users, eq(calls.ownerId, users.id))
+    .where(where)
+    .orderBy(desc(calls.scheduledFor))
+    .limit(2000);
+  return NextResponse.json(rows);
+});

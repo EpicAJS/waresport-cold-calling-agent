@@ -1,58 +1,42 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getCampaign, updateCampaignStatus, saveCall } from "@/lib/store";
-import { makeCall } from "@/lib/bland";
-import { randomUUID } from "crypto";
+import { NextResponse } from "next/server";
+import { eq, sql } from "drizzle-orm";
+import { db, campaigns, campaignContacts, users } from "@/lib/db";
+import { authed, canAccess } from "@/lib/auth";
+import { dispatchCampaign } from "@/lib/dispatcher";
+import { getOrgSettings } from "@/lib/settings";
+import { withDefaults } from "@/lib/templates";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
-  const campaign = getCampaign(params.id);
-  if (!campaign) return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+export const maxDuration = 60;
 
-  const origin = req.headers.get("origin") ?? req.nextUrl.origin;
-  const isLocal = origin.includes("localhost") || origin.includes("127.0.0.1");
-  const webhookUrl = isLocal ? undefined : `${origin}/api/webhooks/bland`;
+export const POST = authed(async (_req, { params }, user) => {
+  const [campaign] = await db.select().from(campaigns).where(eq(campaigns.id, params.id)).limit(1);
+  if (!campaign || !canAccess(user, campaign.ownerId)) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (campaign.status === "active") return NextResponse.json({ error: "Campaign is already running." }, { status: 409 });
 
-  const results: Array<{ contact: string; call_id?: string; error?: string }> = [];
+  const [{ count }] = await db.select({ count: sql<number>`count(*)::int` }).from(campaignContacts)
+    .where(eq(campaignContacts.campaignId, campaign.id));
+  if (count === 0) return NextResponse.json({ error: "Add at least one contact before launching." }, { status: 400 });
 
-  for (const contact of campaign.contacts) {
-    const phone = contact.phone.replace(/\D/g, "");
-    const e164 = phone.startsWith("1") ? `+${phone}` : `+1${phone}`;
+  const [owner] = await db.select().from(users).where(eq(users.id, campaign.ownerId)).limit(1);
+  const org = await getOrgSettings();
+  const emailReady = Boolean(org.resendApiKey && org.fromEmail);
+  const usesBookingLink = JSON.stringify(withDefaults(campaign.emailTemplates)).includes("{{booking_link}}");
 
-    try {
-      const { call_id } = await makeCall({
-        phone_number: e164,
-        task: campaign.script,
-        voice: campaign.voice_id,
-        record: true,
-        wait_for_greeting: true,
-        ...(webhookUrl ? { webhook: webhookUrl } : {}),
-        ...(campaign.from_number ? { from: campaign.from_number } : {}),
-        metadata: {
-          campaign_id: campaign.id,
-          campaign_name: campaign.name,
-          contact_id: contact.id,
-          club_name: contact.club_name,
-        },
-      });
-
-      saveCall({
-        id: randomUUID(),
-        bland_call_id: call_id,
-        campaign_id: campaign.id,
-        campaign_name: campaign.name,
-        contact_id: contact.id,
-        club_name: contact.club_name,
-        phone: contact.phone,
-        created_at: new Date().toISOString(),
-      });
-
-      results.push({ contact: contact.club_name, call_id });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      results.push({ contact: contact.club_name, error: message });
+  if (campaign.channel === "call") {
+    if (!process.env.BLAND_AI_API_KEY) return NextResponse.json({ error: "BLAND_AI_API_KEY is not configured." }, { status: 400 });
+    if (!campaign.script.trim()) return NextResponse.json({ error: "The call script is empty." }, { status: 400 });
+  } else {
+    if (!emailReady) return NextResponse.json({ error: "Email isn't configured yet — an admin must add a Resend key and from address in Settings." }, { status: 400 });
+    if (usesBookingLink && !owner?.bookingUrl) {
+      return NextResponse.json({ error: "Your emails use {{booking_link}} — add your booking link in Settings first." }, { status: 400 });
     }
   }
 
-  updateCampaignStatus(params.id, "active");
+  await db.update(campaigns).set({ status: "active", launchedAt: campaign.launchedAt ?? new Date() }).where(eq(campaigns.id, campaign.id));
+  const scheduled = await dispatchCampaign(campaign.id);
 
-  return NextResponse.json({ launched: results.filter((r) => r.call_id).length, results });
-}
+  const warnings: string[] = [];
+  if (campaign.channel === "call" && campaign.emailsEnabled && !emailReady) warnings.push("Follow-up emails are on but email isn't configured, so none will be sent.");
+  if (campaign.channel === "call" && !owner?.bookingUrl) warnings.push("You have no booking link in Settings, so prospects who want a demo won't get one automatically.");
+  return NextResponse.json({ ok: true, scheduled, warnings });
+});
