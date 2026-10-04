@@ -3,13 +3,15 @@
 import { useState, useEffect } from "react";
 import { formatLocation, formatPhone } from "@/lib/utils";
 import { STAGE_COLOR, STAGE_LABEL } from "@/lib/labels";
-import { Search, Upload, MapPin, CheckCircle, XCircle, Loader2, Globe, BookUser, Plus, Trash2, ExternalLink, Mail, Star, Info } from "lucide-react";
+import ContactEditForm from "@/components/contact-edit-form";
+import { Search, Upload, MapPin, CheckCircle, XCircle, Loader2, Globe, BookUser, Plus, Trash2, Pencil, ExternalLink, Mail, Star, Info } from "lucide-react";
 
 type Contact = {
   id: string;
   clubName: string;
   contactName?: string | null;
   phone: string;
+  altPhone?: string | null;
   email?: string | null;
   website?: string | null;
   address?: string | null;
@@ -86,6 +88,7 @@ export default function ContactsPage() {
   const [addingToCampaign, setAddingToCampaign] = useState(false);
   const [showCampaignPicker, setShowCampaignPicker] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Contact | null>(null);
   const [notice, setNotice] = useState<{ ok: boolean; text: string } | null>(null);
 
   const loadSavedContacts = async () => {
@@ -525,6 +528,20 @@ export default function ContactsPage() {
         <div className="space-y-4">
           {manualForm}
 
+          {editing && (
+            <ContactEditForm
+              key={editing.id}
+              contact={editing}
+              onCancel={() => setEditing(null)}
+              onSaved={(updated) => {
+                setSavedContacts((prev) => prev.map((c) => (c.id === updated.id ? { ...c, ...updated } : c)));
+                setEditing(null);
+                setNotice({ ok: true, text: `Saved ${updated.clubName}.` });
+                setTimeout(() => setNotice(null), 3000);
+              }}
+            />
+          )}
+
           {/* Add to campaign picker */}
           {showCampaignPicker && selectedBook.size > 0 && (
             <div className="bg-white rounded-xl border border-blue-200 p-4">
@@ -672,8 +689,16 @@ export default function ContactsPage() {
                           {sourceLabel[c.source] ?? c.source}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <button
+                          onClick={() => { setEditing(c); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                          title="Edit contact"
+                          className="p-1 text-gray-300 hover:text-blue-500 transition-colors"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          title="Delete contact"
                           onClick={() => handleDeleteContact(c.id)}
                           disabled={deletingId === c.id}
                           className="p-1 text-gray-300 hover:text-red-400 transition-colors disabled:opacity-50"

@@ -25,6 +25,7 @@ and retries for calls nobody picked up.
 - **AI writer** (OpenAI): drafts or improves call scripts and email sequences.
 - **Team**:
   - email + password accounts; the first user becomes admin, and admins invite reps
+  - "Forgot password?" on the login page emails a reset link; admins can also create a reset link for any teammate in Settings → Team
   - reps see only their own data; admins see everyone's
   - API keys and phone numbers are shared and admin-managed
 

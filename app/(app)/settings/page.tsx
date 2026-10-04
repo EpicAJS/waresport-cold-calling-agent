@@ -147,6 +147,13 @@ export default function SettingsPage() {
     load();
   };
 
+  const resetPassword = async (m: Member) => {
+    const r = await send(`/api/team/${m.id}/reset`, "POST");
+    setInviteStatus(r.ok
+      ? { ok: true, msg: `${r.data.emailed ? `Reset link emailed to ${m.email}.` : "Email isn't configured, so send them this link yourself."} Link (valid 24 hours): ${r.data.link}` }
+      : { ok: false, msg: r.data.error ?? "Couldn't create a reset link." });
+  };
+
   const addNumber = async () => {
     const r = await send("/api/settings/phone-numbers", "POST", pn);
     setPnStatus(r.ok ? null : { ok: false, msg: r.data.error ?? "Couldn't add number." });
@@ -272,6 +279,9 @@ export default function SettingsPage() {
                   <option value="rep">Sales rep</option>
                   <option value="admin">Admin</option>
                 </select>
+                {m.id !== me.id && !m.disabled && (
+                  <button onClick={() => resetPassword(m)} className="text-xs text-blue-600 hover:underline">Reset password</button>
+                )}
                 {m.id !== me.id && (
                   <button onClick={() => updateMember(m.id, { disabled: !m.disabled })} className="text-xs text-gray-500 hover:underline w-14 text-right">
                     {m.disabled ? "Enable" : "Disable"}

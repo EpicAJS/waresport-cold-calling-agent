@@ -4,6 +4,8 @@ const PUBLIC_PREFIXES = [
   "/login",
   "/setup",
   "/invite/",
+  "/forgot-password",
+  "/reset/",
   "/unsubscribe",
   "/api/auth/",
   "/api/webhooks/",

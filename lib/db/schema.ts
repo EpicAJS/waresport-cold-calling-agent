@@ -56,6 +56,15 @@ export const invites = pgTable("invites", {
   createdAt: createdAt(),
 });
 
+export const passwordResets = pgTable("password_resets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tokenHash: text("token_hash").notNull().unique(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: createdAt(),
+});
+
 export const orgSettings = pgTable("org_settings", {
   id: integer("id").primaryKey().default(1),
   companyName: text("company_name").notNull().default("Waresport"),

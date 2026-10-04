@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { sql } from "drizzle-orm";
 import { db, users } from "@/lib/db";
@@ -23,7 +24,12 @@ export default async function LoginPage() {
           { name: "email", label: "Email", type: "email", autoComplete: "email" },
           { name: "password", label: "Password", type: "password", autoComplete: "current-password" },
         ]}
-        footer={<p className="text-xs text-gray-400 text-center">No account? Ask your admin for an invite link.</p>}
+        footer={
+          <div className="text-center space-y-1">
+            <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">Forgot password?</Link>
+            <p className="text-xs text-gray-400">No account? Ask your admin for an invite link.</p>
+          </div>
+        }
       />
     </Suspense>
   );
