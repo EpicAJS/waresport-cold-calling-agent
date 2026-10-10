@@ -28,7 +28,7 @@ export default async function LoginPage() {
         ]}
         footer={
           <div className="text-center space-y-1">
-            <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">Forgot password?</Link>
+            <Link href="/forgot-password" className="text-sm text-brand-600 hover:underline">Forgot password?</Link>
             <p className="text-xs text-gray-400">No account? Ask your admin for an invite link.</p>
           </div>
         }

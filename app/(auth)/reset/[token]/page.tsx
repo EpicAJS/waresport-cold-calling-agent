@@ -14,7 +14,7 @@ export default async function ResetPasswordPage({ params }: { params: { token: s
         <div className="max-w-sm bg-white rounded-xl border border-gray-200 p-6 text-center space-y-3">
           <h1 className="text-lg font-bold text-gray-900">Link not valid</h1>
           <p className="text-sm text-gray-500">This reset link is invalid, already used, or expired.</p>
-          <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">Request a new link</Link>
+          <Link href="/forgot-password" className="text-sm text-brand-600 hover:underline">Request a new link</Link>
         </div>
       </div>
     );

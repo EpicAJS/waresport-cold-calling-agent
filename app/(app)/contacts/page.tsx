@@ -247,32 +247,32 @@ export default function ContactsPage() {
       <h2 className="font-semibold text-gray-800 mb-3">Add Contact Manually</h2>
       <div className="grid grid-cols-2 gap-3 mb-3">
         <input
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           placeholder="Club / Company Name *"
           value={manualName}
           onChange={(e) => setManualName(e.target.value)}
         />
         <input
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           placeholder="Phone Number"
           value={manualPhone}
           onChange={(e) => setManualPhone(e.target.value)}
         />
         <input
-          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
           placeholder="Email"
           value={manualEmail}
           onChange={(e) => setManualEmail(e.target.value)}
         />
         <div className="flex gap-2">
           <input
-            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             placeholder="City"
             value={manualCity}
             onChange={(e) => setManualCity(e.target.value)}
           />
           <input
-            className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             placeholder="State"
             value={manualState}
             onChange={(e) => setManualState(e.target.value)}
@@ -283,7 +283,7 @@ export default function ContactsPage() {
         <button
           onClick={handleManualAdd}
           disabled={!manualName || (!manualPhone && !manualEmail)}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
+          className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
         >
           Save to Contact Book
         </button>
@@ -325,7 +325,7 @@ export default function ContactsPage() {
           onClick={() => setActiveTab("find")}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
             activeTab === "find"
-              ? "border-blue-600 text-blue-600"
+              ? "border-brand-600 text-brand-600"
               : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
@@ -336,7 +336,7 @@ export default function ContactsPage() {
           onClick={() => setActiveTab("book")}
           className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
             activeTab === "book"
-              ? "border-blue-600 text-blue-600"
+              ? "border-brand-600 text-brand-600"
               : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
@@ -356,20 +356,20 @@ export default function ContactsPage() {
           {/* Search panel */}
           <div className="bg-white rounded-xl border border-gray-200 p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Globe className="w-4 h-4 text-blue-500" />
+              <Globe className="w-4 h-4 text-brand-500" />
               <h2 className="font-semibold text-gray-800">Find Clubs</h2>
               <span className="text-xs text-gray-400 ml-1">— searches Google Maps + OpenStreetMap for comprehensive results</span>
             </div>
             <div className="flex gap-3 mb-4">
               <input
-                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 placeholder="Club type (e.g. soccer clubs, basketball academies)"
                 value={findQuery}
                 onChange={(e) => setFindQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleFind()}
               />
               <input
-                className="w-44 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-44 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                 placeholder="City or State (e.g. Florida)"
                 value={findCity}
                 onChange={(e) => setFindCity(e.target.value)}
@@ -378,7 +378,7 @@ export default function ContactsPage() {
               <button
                 onClick={handleFind}
                 disabled={finding || !findQuery || !findCity}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
               >
                 {finding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 {finding ? "Searching..." : "Search"}
@@ -387,7 +387,7 @@ export default function ContactsPage() {
 
             {/* Results meta banner */}
             {findMeta && (
-              <div className={`mb-4 flex items-start gap-2 p-3 rounded-lg text-sm border ${findMeta.serp_exhausted ? "bg-yellow-50 border-yellow-200 text-yellow-800" : "bg-blue-50 border-blue-100 text-blue-700"}`}>
+              <div className={`mb-4 flex items-start gap-2 p-3 rounded-lg text-sm border ${findMeta.serp_exhausted ? "bg-yellow-50 border-yellow-200 text-yellow-800" : "bg-brand-50 border-brand-100 text-brand-700"}`}>
                 <Info className="w-4 h-4 mt-0.5 shrink-0" />
                 <span>
                   {findMeta.serp_exhausted && <><strong>Google Maps quota reached</strong> — using Foursquare + OpenStreetMap as backup. </>}
@@ -436,7 +436,7 @@ export default function ContactsPage() {
                           {r.email && (
                             <a
                               href={`mailto:${r.email}`}
-                              className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
+                              className="flex items-center gap-1 text-xs text-brand-500 hover:underline"
                             >
                               <Mail className="w-3 h-3" />{r.email}
                             </a>
@@ -446,7 +446,7 @@ export default function ContactsPage() {
                               href={r.website}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-xs text-blue-500 hover:underline"
+                              className="flex items-center gap-1 text-xs text-brand-500 hover:underline"
                             >
                               <ExternalLink className="w-3 h-3" />
                               {(() => { try { return new URL(r.website).hostname.replace(/^www\./, ""); } catch { return r.website; } })()}
@@ -464,7 +464,7 @@ export default function ContactsPage() {
                   <button
                     onClick={addFindResultsToBook}
                     disabled={addingToBook}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
+                    className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
                   >
                     {addingToBook ? "Saving..." : `Save ${findResults.length} contacts to Contact Book`}
                   </button>
@@ -497,7 +497,7 @@ export default function ContactsPage() {
                   Paste CSV rows: <code className="bg-gray-100 px-1 rounded">Club Name, Phone, Email (opt), Website (opt), City (opt), State (opt)</code>
                 </p>
                 <textarea
-                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 h-32 resize-none"
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-brand-500 h-32 resize-none"
                   placeholder={"Austin FC, 5124751000, info@austinfc.com, austinfc.com, Austin, TX\nDallas Soccer Club, 2145550100"}
                   value={importText}
                   onChange={(e) => setImportText(e.target.value)}
@@ -506,7 +506,7 @@ export default function ContactsPage() {
                   <button
                     onClick={handleImport}
                     disabled={!importText}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
+                    className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
                   >
                     Import to Contact Book
                   </button>
@@ -544,13 +544,13 @@ export default function ContactsPage() {
 
           {/* Add to campaign picker */}
           {showCampaignPicker && selectedBook.size > 0 && (
-            <div className="bg-white rounded-xl border border-blue-200 p-4">
+            <div className="bg-white rounded-xl border border-brand-200 p-4">
               <p className="text-sm font-medium text-gray-800 mb-3">
                 Add {selectedBook.size} contact{selectedBook.size > 1 ? "s" : ""} to a campaign:
               </p>
               <div className="flex gap-3">
                 <select
-                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   value={targetCampaign}
                   onChange={(e) => setTargetCampaign(e.target.value)}
                 >
@@ -562,7 +562,7 @@ export default function ContactsPage() {
                 <button
                   onClick={handleAddToCampaign}
                   disabled={!targetCampaign || addingToCampaign}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
+                  className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
                 >
                   {addingToCampaign ? "Adding..." : "Add to Campaign"}
                 </button>
@@ -582,7 +582,7 @@ export default function ContactsPage() {
               <div className="relative flex-1 max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   placeholder="Search contacts..."
                   value={bookSearch}
                   onChange={(e) => setBookSearch(e.target.value)}
@@ -590,10 +590,10 @@ export default function ContactsPage() {
               </div>
               {selectedBook.size > 0 && (
                 <div className="flex items-center gap-2 ml-auto">
-                  <span className="text-sm text-blue-600 font-medium">{selectedBook.size} selected</span>
+                  <span className="text-sm text-brand-600 font-medium">{selectedBook.size} selected</span>
                   <button
                     onClick={() => { setShowCampaignPicker(true); loadCampaigns(); }}
-                    className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90"
+                    className="px-3 py-1.5 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90"
                   >
                     Add to Campaign
                   </button>
@@ -661,7 +661,7 @@ export default function ContactsPage() {
                       </td>
                       <td className="px-4 py-3 text-sm">
                         {c.email
-                          ? <a href={`mailto:${c.email}`} className={c.emailOptOut ? "text-gray-400 line-through" : "text-blue-500 hover:underline"} title={c.emailOptOut ? "Unsubscribed from emails" : undefined}>{c.email}</a>
+                          ? <a href={`mailto:${c.email}`} className={c.emailOptOut ? "text-gray-400 line-through" : "text-brand-500 hover:underline"} title={c.emailOptOut ? "Unsubscribed from emails" : undefined}>{c.email}</a>
                           : <span className="text-gray-300">—</span>}
                       </td>
                       <td className="px-4 py-3 text-sm">
@@ -671,7 +671,7 @@ export default function ContactsPage() {
                               href={c.website}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex items-center gap-1 text-blue-500 hover:underline"
+                              className="flex items-center gap-1 text-brand-500 hover:underline"
                             >
                               <ExternalLink className="w-3 h-3" />
                               {(() => { try { return new URL(c.website).hostname.replace(/^www\./, ""); } catch { return c.website; } })()}
@@ -693,7 +693,7 @@ export default function ContactsPage() {
                         <button
                           onClick={() => { setEditing(c); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                           title="Edit contact"
-                          className="p-1 text-gray-300 hover:text-blue-500 transition-colors"
+                          className="p-1 text-gray-300 hover:text-brand-500 transition-colors"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>

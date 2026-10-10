@@ -49,7 +49,7 @@ export default function InboxesCard({ meId }: { meId: string }) {
 
   return (
     <div id="inboxes" className="bg-white rounded-xl border border-gray-200 p-5 space-y-4 scroll-mt-20">
-      <h2 className="font-semibold text-gray-800 flex items-center gap-2"><Inbox className="w-4 h-4 text-blue-500" />Connected inboxes</h2>
+      <h2 className="font-semibold text-gray-800 flex items-center gap-2"><Inbox className="w-4 h-4 text-brand-500" />Connected inboxes</h2>
       <p className="text-sm text-gray-500">
         Campaign emails send from your own inbox, and replies are scanned and sorted in the AI Inbox. Only replies from people
         you&apos;ve emailed (or who are in your contacts) are read — the rest of your mail is ignored.
@@ -67,9 +67,9 @@ export default function InboxesCard({ meId }: { meId: string }) {
                 </p>
               </div>
               {b.status === "error" ? (
-                <a href={`/api/oauth/${b.provider}/start?mode=connect`} className="text-xs text-blue-600 hover:underline">Reconnect</a>
+                <a href={`/api/oauth/${b.provider}/start?mode=connect`} className="text-xs text-brand-600 hover:underline">Reconnect</a>
               ) : (
-                <button onClick={() => sync(b.id)} disabled={busy === b.id} className="text-xs text-blue-600 hover:underline flex items-center gap-1 disabled:opacity-50">
+                <button onClick={() => sync(b.id)} disabled={busy === b.id} className="text-xs text-brand-600 hover:underline flex items-center gap-1 disabled:opacity-50">
                   {busy === b.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}Scan now
                 </button>
               )}

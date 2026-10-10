@@ -108,12 +108,12 @@ function InboxView() {
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search replies…"
-              className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500" />
+              className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-brand-500" />
           </div>
           <div className="flex flex-wrap gap-1">
             {FILTERS.map((f) => (
               <button key={f.key} onClick={() => { setFilter(f.key); setSelectedId(null); setLoading(true); }}
-                className={cn("text-[11px] px-2 py-0.5 rounded-full border", filter === f.key ? "border-blue-500 text-blue-500 bg-blue-50" : "border-gray-200 text-gray-500 hover:text-gray-900")}>
+                className={cn("text-[11px] px-2 py-0.5 rounded-full border", filter === f.key ? "border-brand-500 text-brand-500 bg-brand-50" : "border-gray-200 text-gray-500 hover:text-gray-900")}>
                 {f.label}
               </button>
             ))}
@@ -124,9 +124,9 @@ function InboxView() {
             <Empty>{filter === "new" ? "You're all caught up. New replies are classified and routed here automatically." : "Nothing here."}</Empty>
           ) : items.map((m) => (
             <button key={m.id} onClick={() => setSelectedId(m.id)}
-              className={cn("w-full text-left px-3 py-2.5 border-b border-gray-200 border-l-2", selectedId === m.id ? "bg-blue-50 border-l-blue-500" : "border-l-transparent hover:bg-gray-50")}>
+              className={cn("w-full text-left px-3 py-2.5 border-b border-gray-200 border-l-2", selectedId === m.id ? "bg-brand-50 border-l-brand-500" : "border-l-transparent hover:bg-gray-50")}>
               <div className="flex items-center gap-2">
-                {m.status === "new" && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />}
+                {m.status === "new" && <span className="w-1.5 h-1.5 rounded-full bg-brand-500 shrink-0" />}
                 <span className="text-xs font-medium text-gray-900 truncate">{m.fromName || m.fromEmail}</span>
                 <span className="text-[10px] text-gray-400 ml-auto shrink-0">{timeAgo(m.receivedAt)}</span>
               </div>
@@ -167,8 +167,8 @@ function InboxView() {
 
             <div className="card p-4 space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <Sparkles className="w-3.5 h-3.5 text-blue-500" />
-                <span className="text-[11px] font-semibold text-blue-500 uppercase tracking-wide">
+                <Sparkles className="w-3.5 h-3.5 text-brand-500" />
+                <span className="text-[11px] font-semibold text-brand-500 uppercase tracking-wide">
                   {detail.intentSource === "ai" ? "AI classification" : detail.intentSource === "manual" ? "Set manually" : "Rule-based classification"}
                 </span>
                 {detail.intent && <span className={INTENT_CHIP[detail.intent]}>{INTENT_LABEL[detail.intent]}</span>}
@@ -188,7 +188,7 @@ function InboxView() {
             <div className="space-y-2">
               <p className="eyebrow">Conversation</p>
               {detail.thread.map((t) => (
-                <div key={`${t.direction}-${t.id}`} className={cn("rounded-[10px] border px-3.5 py-2.5 max-w-[90%]", t.direction === "out" ? "ml-auto bg-blue-50 border-blue-200" : "bg-white border-gray-200")}>
+                <div key={`${t.direction}-${t.id}`} className={cn("rounded-[10px] border px-3.5 py-2.5 max-w-[90%]", t.direction === "out" ? "ml-auto bg-brand-50 border-brand-200" : "bg-white border-gray-200")}>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-[10px] font-semibold text-gray-500">{t.direction === "out" ? "You" : detail.fromName || "Them"}</span>
                     <span className="text-[10px] text-gray-400">{t.at ? new Date(t.at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : ""}</span>
@@ -203,12 +203,12 @@ function InboxView() {
               <div className="flex items-center gap-2">
                 <p className="eyebrow">Suggested reply</p>
                 <span className="text-[10px] text-purple-700">{detail.suggestedReplySource === "ai" ? "AI draft" : detail.suggestedReplySource === "template" ? "Template" : ""}</span>
-                <button onClick={regenerate} disabled={busy !== null} className="ml-auto text-[11px] text-blue-500 hover:underline flex items-center gap-1 disabled:opacity-50">
+                <button onClick={regenerate} disabled={busy !== null} className="ml-auto text-[11px] text-brand-500 hover:underline flex items-center gap-1 disabled:opacity-50">
                   {busy === "draft" ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}Regenerate
                 </button>
               </div>
               <textarea value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Write a reply…"
-                className="w-full h-44 resize-y border border-gray-200 rounded-md px-3 py-2 text-[13px] leading-relaxed focus:outline-none focus:ring-1 focus:ring-blue-500" />
+                className="w-full h-44 resize-y border border-gray-200 rounded-md px-3 py-2 text-[13px] leading-relaxed focus:outline-none focus:ring-1 focus:ring-brand-500" />
               {notice && <p className={cn("text-xs rounded-md px-3 py-2 border", notice.ok ? "text-green-700 bg-green-50 border-green-200" : "text-red-700 bg-red-50 border-red-200")}>{notice.text}</p>}
               <div className="flex items-center gap-2 flex-wrap">
                 <button disabled={busy !== null || !draft.trim()} className="btn-primary"

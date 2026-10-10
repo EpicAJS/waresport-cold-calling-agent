@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
             </div>
             {result && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{result.text}</p>}
             <button type="submit" disabled={busy}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
               {busy && <Loader2 className="w-4 h-4 animate-spin" />}Send reset link
             </button>
           </>
@@ -48,7 +48,7 @@ export default function ForgotPasswordPage() {
         <p className="text-xs text-gray-400 text-center">
           No email arriving? Your admin can create a reset link for you in Settings → Team.
         </p>
-        <p className="text-center"><Link href="/login" className="text-sm text-blue-600 hover:underline">Back to sign in</Link></p>
+        <p className="text-center"><Link href="/login" className="text-sm text-brand-600 hover:underline">Back to sign in</Link></p>
       </form>
     </div>
   );

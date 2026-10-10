@@ -120,11 +120,11 @@ export default function NewCampaignPage() {
             <button
               onClick={() => (i === 0 || name) && setStep(i + 1)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                step === i + 1 ? "bg-blue-600 text-white" : step > i + 1 ? "bg-blue-100 text-blue-700" : "bg-gray-100 text-gray-500"
+                step === i + 1 ? "bg-brand-600 text-white" : step > i + 1 ? "bg-brand-100 text-brand-700" : "bg-gray-100 text-gray-500"
               }`}
             >
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
-                step === i + 1 ? "bg-white text-blue-600" : step > i + 1 ? "bg-blue-500 text-white" : "bg-gray-300 text-gray-600"
+                step === i + 1 ? "bg-white text-brand-600" : step > i + 1 ? "bg-brand-500 text-white" : "bg-gray-300 text-gray-600"
               }`}>{i + 1}</span>
               {label}
             </button>
@@ -143,8 +143,8 @@ export default function NewCampaignPage() {
                 { id: "email", icon: Mail, title: "Email only", desc: "A cold email sequence to contacts that have an email address." },
               ] as const).map((o) => (
                 <button key={o.id} type="button" onClick={() => { setChannel(o.id); setSelected(new Set()); }}
-                  className={`text-left p-4 border rounded-lg transition-colors ${channel === o.id ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
-                  <o.icon className={`w-5 h-5 mb-2 ${channel === o.id ? "text-blue-600" : "text-gray-400"}`} />
+                  className={`text-left p-4 border rounded-lg transition-colors ${channel === o.id ? "border-brand-500 bg-brand-50" : "border-gray-200 hover:bg-gray-50"}`}>
+                  <o.icon className={`w-5 h-5 mb-2 ${channel === o.id ? "text-brand-600" : "text-gray-400"}`} />
                   <p className="text-sm font-medium text-gray-800">{o.title}</p>
                   <p className="text-xs text-gray-500 mt-0.5">{o.desc}</p>
                 </button>
@@ -194,7 +194,7 @@ export default function NewCampaignPage() {
               <div>
                 <label className="text-sm font-medium text-gray-700 block mb-1.5">Outbound phone number <span className="text-gray-400 font-normal">(optional)</span></label>
                 {phoneNumbers.length === 0 ? (
-                  <p className="text-xs text-gray-400">No company phone numbers yet — an admin can add them in <Link href="/settings" className="text-blue-500 hover:underline">Settings</Link>. Bland.ai&apos;s default number will be used.</p>
+                  <p className="text-xs text-gray-400">No company phone numbers yet — an admin can add them in <Link href="/settings" className="text-brand-500 hover:underline">Settings</Link>. Bland.ai&apos;s default number will be used.</p>
                 ) : (
                   <select className={inputCls} value={fromNumber} onChange={(e) => setFromNumber(e.target.value)}>
                     <option value="">Use Bland.ai default</option>
@@ -215,8 +215,8 @@ export default function NewCampaignPage() {
               <div className="grid grid-cols-2 gap-3">
                 {VOICES.map((v) => (
                   <button key={v.id} onClick={() => setVoice(v.id)}
-                    className={`flex items-center gap-3 p-3 border rounded-lg text-left transition-colors ${voice === v.id ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:bg-gray-50"}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${voice === v.id ? "bg-blue-500" : "bg-gray-200"}`}>
+                    className={`flex items-center gap-3 p-3 border rounded-lg text-left transition-colors ${voice === v.id ? "border-brand-500 bg-brand-50" : "border-gray-200 hover:bg-gray-50"}`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${voice === v.id ? "bg-brand-500" : "bg-gray-200"}`}>
                       <Mic className={`w-4 h-4 ${voice === v.id ? "text-white" : "text-gray-500"}`} />
                     </div>
                     <div>
@@ -255,7 +255,7 @@ export default function NewCampaignPage() {
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-gray-800">Select Contacts</h2>
               <button onClick={() => setSelected(selectedEligible.length === eligible.length ? new Set() : new Set(eligible.map((c) => c.id)))}
-                className="text-sm text-blue-600 hover:underline">
+                className="text-sm text-brand-600 hover:underline">
                 {selectedEligible.length === eligible.length && eligible.length > 0 ? "Deselect All" : "Select All"}
               </button>
             </div>
@@ -269,13 +269,13 @@ export default function NewCampaignPage() {
             {eligible.length === 0 ? (
               <div className="text-center py-10 text-gray-400 border border-dashed border-gray-200 rounded-lg">
                 <p className="text-sm">No eligible contacts yet.</p>
-                <p className="text-xs mt-1"><Link href="/contacts" className="text-blue-500 hover:underline">Add contacts</Link> first.</p>
+                <p className="text-xs mt-1"><Link href="/contacts" className="text-brand-500 hover:underline">Add contacts</Link> first.</p>
               </div>
             ) : (
               <div className="border border-gray-200 rounded-lg overflow-hidden max-h-96 overflow-y-auto">
                 {visible.map((c) => (
                   <div key={c.id} onClick={() => toggle(c.id)} className="flex items-center gap-3 p-3 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50">
-                    {selected.has(c.id) ? <CheckSquare className="w-4 h-4 text-blue-500 shrink-0" /> : <Square className="w-4 h-4 text-gray-300 shrink-0" />}
+                    {selected.has(c.id) ? <CheckSquare className="w-4 h-4 text-brand-500 shrink-0" /> : <Square className="w-4 h-4 text-gray-300 shrink-0" />}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-800">{c.clubName}</p>
                       <p className="text-xs text-gray-500">
@@ -336,7 +336,7 @@ export default function NewCampaignPage() {
         <div className="flex gap-2">
           {step < steps.length ? (
             <button onClick={() => setStep((s) => s + 1)} disabled={step === 1 && !name.trim()}
-              className="px-5 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+              className="px-5 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
               Continue
             </button>
           ) : (

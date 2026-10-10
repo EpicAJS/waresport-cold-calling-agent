@@ -53,7 +53,7 @@ export default function AnalyticsPage() {
   const totalIntents = d?.intents.reduce((a, i) => a + i.n, 0) ?? 0;
   const SortHead = ({ k, label }: { k: SubjectSort; label: string }) => (
     <th className="eyebrow text-left px-4 py-2.5">
-      <button onClick={() => setSort(k)} className={cn("flex items-center gap-1", sort === k && "text-blue-500")}>{label}<ArrowUpDown className="w-3 h-3" /></button>
+      <button onClick={() => setSort(k)} className={cn("flex items-center gap-1", sort === k && "text-brand-500")}>{label}<ArrowUpDown className="w-3 h-3" /></button>
     </th>
   );
 
@@ -81,7 +81,7 @@ export default function AnalyticsPage() {
 
       <div>
         <SectionHeader title="Email activity" action={
-          <button onClick={() => setShowTable(!showTable)} className="text-[11px] text-blue-500 hover:underline">{showTable ? "Show chart" : "Show table"}</button>
+          <button onClick={() => setShowTable(!showTable)} className="text-[11px] text-brand-500 hover:underline">{showTable ? "Show chart" : "Show table"}</button>
         } />
         <Card className="p-4">
           <div className="flex gap-4 mb-3 flex-wrap">
@@ -218,7 +218,7 @@ export default function AnalyticsPage() {
                   return (
                     <tr key={c.id} className="border-b border-gray-200 last:border-0 hover:bg-gray-50">
                       <td className="px-4 py-2.5">
-                        <Link href={`/campaigns/${c.id}`} className="text-xs font-medium text-gray-900 hover:text-blue-500 flex items-center gap-1.5">
+                        <Link href={`/campaigns/${c.id}`} className="text-xs font-medium text-gray-900 hover:text-brand-500 flex items-center gap-1.5">
                           {call ? <Phone className="w-3 h-3 text-gray-400" /> : <Mail className="w-3 h-3 text-gray-400" />}{c.name}
                         </Link>
                         <p className="text-[11px] text-gray-400">{c.owner_name}</p>

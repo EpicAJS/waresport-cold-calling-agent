@@ -77,7 +77,7 @@ export default function CampaignsPage() {
           <button onClick={load} className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
-          <Link href="/campaigns/new" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90">
+          <Link href="/campaigns/new" className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90">
             <Plus className="w-4 h-4" />New Campaign
           </Link>
         </div>
@@ -95,7 +95,7 @@ export default function CampaignsPage() {
         <div className="text-center py-20 text-gray-400">
           <p className="text-sm font-medium">No campaigns yet.</p>
           <p className="text-xs mt-1">Create one to start calling or emailing.</p>
-          <Link href="/campaigns/new" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90">
+          <Link href="/campaigns/new" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90">
             <Plus className="w-4 h-4" />New Campaign
           </Link>
         </div>
@@ -110,7 +110,7 @@ export default function CampaignsPage() {
                 <div className="flex items-start gap-4">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      {isCall ? <Phone className="w-4 h-4 text-blue-500" /> : <Mail className="w-4 h-4 text-purple-500" />}
+                      {isCall ? <Phone className="w-4 h-4 text-brand-500" /> : <Mail className="w-4 h-4 text-purple-500" />}
                       <h2 className="text-base font-semibold text-gray-900">{c.name}</h2>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[c.status] ?? "bg-gray-100 text-gray-600"}`}>{c.status}</span>
                       <span className="text-xs text-gray-400">· {c.ownerName}</span>
@@ -134,7 +134,7 @@ export default function CampaignsPage() {
                         <span>{done} / {c.contactCount} contacts finished</span>
                       </div>
                       <div className="w-full bg-gray-100 rounded-full h-1.5">
-                        <div className="bg-blue-500 h-1.5 rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
+                        <div className="bg-brand-500 h-1.5 rounded-full transition-all" style={{ width: `${Math.min(progress, 100)}%` }} />
                       </div>
                     </div>
 

@@ -12,7 +12,7 @@ export function SectionHeader({ title, tag, action }: { title: string; tag?: Rea
     <div className="flex items-center justify-between mb-3">
       <div className="flex items-center gap-2">
         <h2 className="section-title">{title}</h2>
-        {tag !== undefined && tag !== null && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-500">{tag}</span>}
+        {tag !== undefined && tag !== null && <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-brand-50 text-brand-500">{tag}</span>}
       </div>
       {action}
     </div>

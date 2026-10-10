@@ -69,14 +69,14 @@ export default function OverviewPage() {
       </div>
 
       {/* AI banner */}
-      <div className="rounded-[14px] border border-blue-200 px-4 py-3.5 flex items-center gap-3 flex-wrap"
-        style={{ background: "linear-gradient(135deg, rgb(var(--blue) / var(--soft-alpha)) 0%, rgb(var(--bg-card)) 100%)" }}>
+      <div className="rounded-[14px] border border-brand-200 px-4 py-3.5 flex items-center gap-3 flex-wrap"
+        style={{ background: "linear-gradient(135deg, rgb(var(--brand) / var(--soft-alpha)) 0%, rgb(var(--bg-card)) 100%)" }}>
         <span className={activeInboxes ? "ai-pulse" : "ai-pulse idle"} />
-        <span className="text-xs font-semibold text-blue-500">{activeInboxes ? (shell.aiEnabled ? "AI scanning live" : "Reply scanning live") : "Connect an inbox to start"}</span>
+        <span className="text-xs font-semibold text-brand-500">{activeInboxes ? (shell.aiEnabled ? "AI scanning live" : "Reply scanning live") : "Connect an inbox to start"}</span>
         <span className="text-xs text-gray-500">
           {activeInboxes
             ? `Monitoring ${activeInboxes} inbox${activeInboxes === 1 ? "" : "es"} · ${shell.threads.toLocaleString()} threads tracked · last scan ${timeAgo(shell.lastScanAt)}`
-            : <>Replies are classified automatically once Gmail or Outlook is connected in <Link href="/settings#inboxes" className="text-blue-500 hover:underline">Settings</Link>.</>}
+            : <>Replies are classified automatically once Gmail or Outlook is connected in <Link href="/settings#inboxes" className="text-brand-500 hover:underline">Settings</Link>.</>}
         </span>
         <div className="ml-auto flex gap-1.5 flex-wrap">
           <Pill tone="pos">{d?.today.positive ?? 0} positive today</Pill>
@@ -100,9 +100,9 @@ export default function OverviewPage() {
         <div className="flex flex-col gap-4 min-w-0">
           <div>
             <SectionHeader title="Active campaigns" tag={d?.campaigns.filter((c) => c.status === "active").length ?? 0}
-              action={<Link href="/campaigns" className="text-[11px] text-blue-500 hover:underline">All campaigns</Link>} />
+              action={<Link href="/campaigns" className="text-[11px] text-brand-500 hover:underline">All campaigns</Link>} />
             <Card>
-              {d && d.campaigns.length === 0 ? <Empty>No running campaigns. <Link href="/campaigns/new" className="text-blue-500 hover:underline">Create one</Link>.</Empty> : (
+              {d && d.campaigns.length === 0 ? <Empty>No running campaigns. <Link href="/campaigns/new" className="text-brand-500 hover:underline">Create one</Link>.</Empty> : (
                 <table className="w-full">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-200">
@@ -117,7 +117,7 @@ export default function OverviewPage() {
                       return (
                         <tr key={c.id} className="border-b border-gray-200 last:border-0 hover:bg-gray-50">
                           <td className="px-4 py-2.5">
-                            <Link href={`/campaigns/${c.id}`} className="text-xs font-medium text-gray-900 hover:text-blue-500 flex items-center gap-1.5">
+                            <Link href={`/campaigns/${c.id}`} className="text-xs font-medium text-gray-900 hover:text-brand-500 flex items-center gap-1.5">
                               {call ? <Phone className="w-3 h-3 text-gray-400" /> : <Mail className="w-3 h-3 text-gray-400" />}{c.name}
                             </Link>
                             <p className="text-[11px] text-gray-400">{c.contacts} contacts · {c.owner_name}</p>
@@ -136,7 +136,7 @@ export default function OverviewPage() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div>
-              <SectionHeader title="Subject line performance" action={<Link href="/analytics" className="text-[11px] text-blue-500 hover:underline">Full report</Link>} />
+              <SectionHeader title="Subject line performance" action={<Link href="/analytics" className="text-[11px] text-brand-500 hover:underline">Full report</Link>} />
               <Card>
                 {d && d.subjects.length === 0 ? <Empty>Subject line stats appear after your first sends.</Empty> : d?.subjects.map((s) => (
                   <div key={s.subject} className="px-4 py-2.5 border-b border-gray-200 last:border-0 flex flex-col gap-1.5">
@@ -181,7 +181,7 @@ export default function OverviewPage() {
           </div>
 
           <div>
-            <SectionHeader title={d && d.reps.length > 1 ? "Rep activity" : "Your activity"} action={<Link href="/team" className="text-[11px] text-blue-500 hover:underline">{d && d.reps.length > 1 ? "Team" : ""}</Link>} />
+            <SectionHeader title={d && d.reps.length > 1 ? "Rep activity" : "Your activity"} action={<Link href="/team" className="text-[11px] text-brand-500 hover:underline">{d && d.reps.length > 1 ? "Team" : ""}</Link>} />
             <Card>
               {d?.reps.map((r) => (
                 <div key={r.id} className="flex items-center gap-2.5 px-4 py-2.5 border-b border-gray-200 last:border-0">
@@ -206,7 +206,7 @@ export default function OverviewPage() {
         <div className="flex flex-col gap-4 min-w-0">
           <div>
             <SectionHeader title="AI reply monitor" tag={shell.unread || undefined}
-              action={<Link href="/inbox" className="text-[11px] text-blue-500 hover:underline flex items-center gap-1">Open inbox<ArrowRight className="w-3 h-3" /></Link>} />
+              action={<Link href="/inbox" className="text-[11px] text-brand-500 hover:underline flex items-center gap-1">Open inbox<ArrowRight className="w-3 h-3" /></Link>} />
             <Card>
               {d && d.monitor.length === 0 ? <Empty>Replies to your outreach will appear here, sorted by intent.</Empty> : d?.monitor.map((m) => (
                 <Link key={m.id} href={`/inbox?id=${m.id}`} className="block px-4 py-3 border-b border-gray-200 last:border-0 hover:bg-gray-50">
@@ -222,7 +222,7 @@ export default function OverviewPage() {
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="text-[10px] text-gray-400">→ {m.ownerName}{m.clubName ? ` · ${m.clubName}` : ""}</span>
                     <span className={cn("ml-auto text-[10px] font-semibold rounded px-1.5 py-0.5",
-                      m.status === "new" ? "text-blue-500 bg-blue-50" : "text-gray-400 bg-gray-100")}>
+                      m.status === "new" ? "text-brand-500 bg-brand-50" : "text-gray-400 bg-gray-100")}>
                       {m.status === "new" ? (m.suggestedReply ? (m.suggestedReplySource === "ai" ? "AI draft ready" : "Draft ready") : "Review") : m.status === "replied" ? "Replied" : m.status === "snoozed" ? "Snoozed" : "Archived"}
                     </span>
                   </div>
@@ -245,12 +245,12 @@ export default function OverviewPage() {
                   </div>
                   <span className="chip chip-warn">{h.opens} opens</span>
                   {h.phone ? (
-                    <a href={`tel:${h.phone}`} className="text-[10px] font-semibold text-blue-500 bg-blue-50 rounded px-2 py-1 whitespace-nowrap">Call now</a>
+                    <a href={`tel:${h.phone}`} className="text-[10px] font-semibold text-brand-500 bg-brand-50 rounded px-2 py-1 whitespace-nowrap">Call now</a>
                   ) : (
-                    <button onClick={() => setComposeFor(h.id)} className="text-[10px] font-semibold text-blue-500 bg-blue-50 rounded px-2 py-1 whitespace-nowrap">Send follow-up</button>
+                    <button onClick={() => setComposeFor(h.id)} className="text-[10px] font-semibold text-brand-500 bg-brand-50 rounded px-2 py-1 whitespace-nowrap">Send follow-up</button>
                   )}
                   {h.phone && h.email && (
-                    <button onClick={() => setComposeFor(h.id)} title="Send follow-up" className="p-1 text-gray-400 hover:text-blue-500"><Mail className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => setComposeFor(h.id)} title="Send follow-up" className="p-1 text-gray-400 hover:text-brand-500"><Mail className="w-3.5 h-3.5" /></button>
                   )}
                 </div>
               ))}
@@ -258,7 +258,7 @@ export default function OverviewPage() {
           </div>
 
           <div>
-            <SectionHeader title="Revenue pipeline" action={<Link href="/pipeline" className="text-[11px] text-blue-500 hover:underline">Pipeline</Link>} />
+            <SectionHeader title="Revenue pipeline" action={<Link href="/pipeline" className="text-[11px] text-brand-500 hover:underline">Pipeline</Link>} />
             <Card>
               {stages.map((s, i) => {
                 const row = d?.pipeline[s.id];
@@ -282,7 +282,7 @@ export default function OverviewPage() {
             <Card>
               {d && d.dedup.recent.length === 0 ? <Empty>No double-contacts. Prospects a teammate reached recently are skipped automatically.</Empty> : d?.dedup.recent.map((b) => (
                 <div key={b.id} className="flex items-center gap-2.5 px-4 py-2.5 border-b border-gray-200 last:border-0">
-                  <ShieldCheck className="w-4 h-4 text-blue-500 shrink-0" />
+                  <ShieldCheck className="w-4 h-4 text-brand-500 shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-medium text-gray-900 truncate">{b.contact_name ? `${b.contact_name} · ` : ""}{b.club_name}</p>
                     <p className="text-[11px] text-gray-500">{b.channel === "call" ? "Called" : "Emailed"} by {b.prior_name ?? "a teammate"}{b.prior_at ? ` ${timeAgo(b.prior_at)}` : ""} · {b.blocked_name}&apos;s campaign skipped it</p>

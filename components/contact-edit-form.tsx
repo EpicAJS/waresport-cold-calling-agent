@@ -61,7 +61,7 @@ export default function ContactEditForm({ contact, onSaved, onCancel }: {
   );
 
   return (
-    <div className="bg-white rounded-xl border border-blue-200 p-5 space-y-4">
+    <div className="bg-white rounded-xl border border-brand-200 p-5 space-y-4">
       <h2 className="font-semibold text-gray-800">Edit {contact.clubName}</h2>
       <div className="grid grid-cols-2 gap-3">
         {field("clubName", "Club / company name *")}
@@ -94,7 +94,7 @@ export default function ContactEditForm({ contact, onSaved, onCancel }: {
       {error && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{error}</p>}
       <div className="flex gap-2">
         <button onClick={save} disabled={busy || !form.clubName.trim() || (!form.phone.trim() && !form.email.trim())}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+          className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
           {busy && <Loader2 className="w-4 h-4 animate-spin" />}Save changes
         </button>
         <button onClick={onCancel} className="px-4 py-2 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50">Cancel</button>

@@ -40,6 +40,7 @@ const config: Config = {
         base: v("bg-base"),
         gray: neutral,
         slate: neutral,
+        brand: hue("brand"),
         blue: hue("blue"),
         green: hue("green"),
         emerald: hue("green"),

@@ -121,7 +121,7 @@ export default function CampaignDetailPage() {
   if (notFound || !campaign) {
     return (
       <div className="p-6">
-        <Link href="/campaigns" className="text-blue-600 hover:underline text-sm flex items-center gap-1"><ChevronLeft className="w-4 h-4" /> Back</Link>
+        <Link href="/campaigns" className="text-brand-600 hover:underline text-sm flex items-center gap-1"><ChevronLeft className="w-4 h-4" /> Back</Link>
         <p className="mt-6 text-gray-500">Campaign not found.</p>
       </div>
     );
@@ -153,7 +153,7 @@ export default function CampaignDetailPage() {
         <Link href="/campaigns" className="text-gray-400 hover:text-gray-600"><ChevronLeft className="w-5 h-5" /></Link>
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            {isCall ? <Phone className="w-5 h-5 text-blue-500" /> : <Mail className="w-5 h-5 text-purple-500" />}
+            {isCall ? <Phone className="w-5 h-5 text-brand-500" /> : <Mail className="w-5 h-5 text-purple-500" />}
             <h1 className="text-2xl font-bold text-gray-900">{campaign.name}</h1>
             <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLOR[campaign.status] ?? ""}`}>{campaign.status}</span>
           </div>
@@ -164,7 +164,7 @@ export default function CampaignDetailPage() {
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
           {isCall && campaign.status !== "draft" && (
-            <button onClick={sync} disabled={busy} className="flex items-center gap-2 px-3 py-2 text-sm border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 disabled:opacity-50 font-medium">
+            <button onClick={sync} disabled={busy} className="flex items-center gap-2 px-3 py-2 text-sm border border-brand-200 text-brand-600 rounded-lg hover:bg-brand-50 disabled:opacity-50 font-medium">
               <RefreshCw className="w-4 h-4" />Check results
             </button>
           )}
@@ -189,7 +189,7 @@ export default function CampaignDetailPage() {
       </div>
 
       {message && (
-        <div className={`text-sm rounded-lg px-4 py-2 border ${message.ok ? "bg-blue-50 border-blue-100 text-blue-700" : "bg-red-50 border-red-100 text-red-700"}`}>
+        <div className={`text-sm rounded-lg px-4 py-2 border ${message.ok ? "bg-brand-50 border-brand-100 text-brand-700" : "bg-red-50 border-red-100 text-red-700"}`}>
           {message.text}
         </div>
       )}
@@ -217,7 +217,7 @@ export default function CampaignDetailPage() {
           ["settings", "Script & Settings"],
         ] as Array<[typeof tab, string]>).map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === k ? "border-blue-600 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${tab === k ? "border-brand-600 text-brand-600" : "border-transparent text-gray-500 hover:text-gray-700"}`}>
             {label}
           </button>
         ))}
@@ -231,13 +231,13 @@ export default function CampaignDetailPage() {
             </button>
           </div>
           {adding && (
-            <div className="bg-white rounded-xl border border-blue-200 p-4 space-y-3">
+            <div className="bg-white rounded-xl border border-brand-200 p-4 space-y-3">
               <p className="text-sm font-medium text-gray-800">Add from your contact book ({addable.length} eligible)</p>
               <div className="max-h-64 overflow-y-auto border border-gray-100 rounded-lg">
                 {addable.map((c) => (
                   <div key={c.id} onClick={() => setPicked((p) => { const n = new Set(p); if (n.has(c.id)) n.delete(c.id); else n.add(c.id); return n; })}
                     className="flex items-center gap-3 px-3 py-2 border-b border-gray-50 last:border-0 cursor-pointer hover:bg-gray-50">
-                    {picked.has(c.id) ? <CheckSquare className="w-4 h-4 text-blue-500" /> : <Square className="w-4 h-4 text-gray-300" />}
+                    {picked.has(c.id) ? <CheckSquare className="w-4 h-4 text-brand-500" /> : <Square className="w-4 h-4 text-gray-300" />}
                     <span className="text-sm text-gray-800">{c.clubName}</span>
                     <span className="text-xs text-gray-400">{isCall ? formatPhone(c.phone) : c.email}</span>
                   </div>
@@ -247,7 +247,7 @@ export default function CampaignDetailPage() {
               <div className="flex gap-2">
                 <button disabled={!picked.size || busy}
                   onClick={async () => { if (await patch({ contactIds: Array.from(picked) }, `Added ${picked.size} contact(s).`)) { setPicked(new Set()); setAdding(false); } }}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+                  className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
                   Add {picked.size || ""}
                 </button>
                 <button onClick={() => { setAdding(false); setPicked(new Set()); }} className="px-4 py-2 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50">Cancel</button>
@@ -373,7 +373,7 @@ export default function CampaignDetailPage() {
           </div>
 
           <button onClick={() => patch(draft, "Campaign saved.")} disabled={busy}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+            className="flex items-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
             <Save className="w-4 h-4" />Save changes
           </button>
         </div>

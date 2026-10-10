@@ -98,11 +98,11 @@ export default function CallList({ calls, showCampaign = true, onChanged }: { ca
                 <div className="flex items-center justify-between mt-4 mb-4 gap-2 flex-wrap">
                   <div className="flex gap-1">
                     <button onClick={() => setTab((p) => ({ ...p, [call.id]: "summary" }))}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${t === "summary" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}>
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${t === "summary" ? "bg-brand-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}>
                       <Sparkles className="w-3.5 h-3.5" />AI Summary
                     </button>
                     <button onClick={() => setTab((p) => ({ ...p, [call.id]: "transcript" }))}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${t === "transcript" ? "bg-blue-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}>
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium ${t === "transcript" ? "bg-brand-600 text-white" : "text-gray-500 hover:bg-gray-100"}`}>
                       <FileText className="w-3.5 h-3.5" />Transcript
                     </button>
                     {call.recordingUrl && (

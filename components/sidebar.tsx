@@ -71,7 +71,7 @@ export default function Sidebar({ user }: { user: { name: string; email: string;
         href={href}
         className={cn(
           "flex items-center gap-2 px-4 py-[7px] border-l-2 text-[13px] transition-colors",
-          active ? "text-blue-500 bg-blue-50 border-blue-500 font-medium" : "text-gray-500 border-transparent hover:text-gray-900 hover:bg-blue-50"
+          active ? "text-brand-500 bg-brand-50 border-brand-500 font-medium" : "text-gray-500 border-transparent hover:text-gray-900 hover:bg-brand-50"
         )}
       >
         <Icon className="w-[15px] h-[15px] opacity-80" />
@@ -87,7 +87,7 @@ export default function Sidebar({ user }: { user: { name: string; email: string;
     <aside className="w-[220px] min-w-[220px] bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0 overflow-y-auto">
       <div className="px-4 pt-5 pb-5 border-b border-gray-200 mb-3">
         <p className="text-[15px] font-semibold text-gray-900 tracking-tight">Waresport</p>
-        <p className="text-[11px] font-medium text-blue-500">Outreach platform</p>
+        <p className="text-[11px] font-medium text-brand-500">Outreach platform</p>
       </div>
 
       <p className="eyebrow px-4 pt-2 pb-1">Workspace</p>

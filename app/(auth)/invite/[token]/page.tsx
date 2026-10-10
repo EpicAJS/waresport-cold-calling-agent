@@ -21,7 +21,7 @@ export default async function InvitePage({ params }: { params: { token: string }
         <div className="max-w-sm bg-white rounded-xl border border-gray-200 p-6 text-center space-y-3">
           <h1 className="text-lg font-bold text-gray-900">Invite not valid</h1>
           <p className="text-sm text-gray-500">This invite link is invalid, already used, or expired. Ask your admin for a new one.</p>
-          <Link href="/login" className="text-sm text-blue-600 hover:underline">Go to sign in</Link>
+          <Link href="/login" className="text-sm text-brand-600 hover:underline">Go to sign in</Link>
         </div>
       </div>
     );

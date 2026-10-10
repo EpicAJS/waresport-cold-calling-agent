@@ -48,7 +48,7 @@ export default function AuthForm({ title, subtitle, fields, endpoint, submitLabe
       <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <div className="text-center">
           <p className="text-[15px] font-semibold text-gray-900 tracking-tight">Waresport</p>
-          <p className="text-[11px] font-medium text-blue-500">Outreach platform</p>
+          <p className="text-[11px] font-medium text-brand-500">Outreach platform</p>
         </div>
         <div>
           <h1 className="text-xl font-bold text-gray-900 text-center">{title}</h1>
@@ -63,7 +63,7 @@ export default function AuthForm({ title, subtitle, fields, endpoint, submitLabe
               type={f.type ?? "text"}
               autoComplete={f.autoComplete}
               required
-              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
               value={values[f.name] ?? ""}
               onChange={(e) => setValues((v) => ({ ...v, [f.name]: e.target.value }))}
             />
@@ -73,7 +73,7 @@ export default function AuthForm({ title, subtitle, fields, endpoint, submitLabe
         <button
           type="submit"
           disabled={busy}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-brand-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50"
         >
           {busy && <Loader2 className="w-4 h-4 animate-spin" />}
           {submitLabel}

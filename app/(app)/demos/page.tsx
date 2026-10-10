@@ -86,7 +86,7 @@ export default function DemosPage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-700">Needs follow-up ({followUps.length})</h2>
         {scheduling && (
-          <div className="bg-white rounded-xl border border-blue-200 p-4 space-y-3">
+          <div className="bg-white rounded-xl border border-brand-200 p-4 space-y-3">
             <p className="text-sm font-medium text-gray-800">Log a demo with {scheduling.clubName}</p>
             <div className="flex gap-3">
               <input type="datetime-local" className={inputCls} value={when} onChange={(e) => setWhen(e.target.value)} />
@@ -97,7 +97,7 @@ export default function DemosPage() {
             <p className="text-xs text-gray-400">Reminders go out 24h and 1h before, and follow-ups after the demo{scheduling.email ? ` to ${scheduling.email}` : " (no email on file, so no emails will be sent)"}.</p>
             {error && <p className="text-xs text-red-600">{error}</p>}
             <div className="flex gap-2">
-              <button onClick={schedule} disabled={!when} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">Save demo</button>
+              <button onClick={schedule} disabled={!when} className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">Save demo</button>
               <button onClick={() => setScheduling(null)} className="px-4 py-2 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50">Cancel</button>
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function DemosPage() {
                     <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{f.email ?? "no email"}</span>
                   </p>
                 </div>
-                <button onClick={() => { setScheduling(f); setError(null); }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-50">
+                <button onClick={() => { setScheduling(f); setError(null); }} className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-brand-200 text-brand-700 rounded-lg hover:bg-brand-50">
                   <CalendarPlus className="w-3.5 h-3.5" />Log demo
                 </button>
                 <button onClick={() => resolve(f.id)} title="Mark handled" className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-gray-200 text-gray-600 rounded-lg hover:bg-gray-50">

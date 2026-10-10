@@ -108,7 +108,7 @@ export default function TeamPage() {
                     </select>
                   </td>
                   <td className="px-4 py-2.5 text-right whitespace-nowrap">
-                    {m.id !== meId && !m.disabled && <button onClick={() => reset(m)} className="text-[11px] text-blue-500 hover:underline mr-3">Reset password</button>}
+                    {m.id !== meId && !m.disabled && <button onClick={() => reset(m)} className="text-[11px] text-brand-500 hover:underline mr-3">Reset password</button>}
                     {m.id !== meId && <button onClick={() => update(m.id, { disabled: !m.disabled })} className="text-[11px] text-gray-500 hover:underline">{m.disabled ? "Enable" : "Disable"}</button>}
                   </td>
                 </tr>

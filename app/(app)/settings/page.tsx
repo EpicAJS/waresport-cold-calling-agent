@@ -33,7 +33,7 @@ function StatusLine({ s }: { s: Status }) {
 function Card({ icon: Icon, title, children }: { icon: React.ElementType; title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 space-y-4">
-      <h2 className="font-semibold text-gray-800 flex items-center gap-2"><Icon className="w-4 h-4 text-blue-500" />{title}</h2>
+      <h2 className="font-semibold text-gray-800 flex items-center gap-2"><Icon className="w-4 h-4 text-brand-500" />{title}</h2>
       {children}
     </div>
   );
@@ -183,7 +183,7 @@ export default function SettingsPage() {
           </div>
         </div>
         <p className="text-xs text-gray-400">Your name appears in the &quot;from&quot; line of your emails, and replies go to {me.email}.</p>
-        <button onClick={saveProfile} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save profile</button>
+        <button onClick={saveProfile} className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save profile</button>
         <StatusLine s={profileStatus} />
       </Card>
 
@@ -192,7 +192,7 @@ export default function SettingsPage() {
         <div className="grid grid-cols-3 gap-2">
           {([["link", "Just a link"], ["calcom", "Cal.com"], ["calendly", "Calendly"]] as const).map(([k, label]) => (
             <button key={k} type="button" onClick={() => setBooking({ ...booking, provider: k })}
-              className={`px-3 py-2 text-sm rounded-lg border ${booking.provider === k ? "border-blue-500 bg-blue-50 text-blue-700 font-medium" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
+              className={`px-3 py-2 text-sm rounded-lg border ${booking.provider === k ? "border-brand-500 bg-brand-50 text-brand-700 font-medium" : "border-gray-200 text-gray-600 hover:bg-gray-50"}`}>
               {label}
             </button>
           ))}
@@ -244,7 +244,7 @@ export default function SettingsPage() {
             )}
           </div>
         )}
-        <button onClick={() => saveBooking()} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save booking settings</button>
+        <button onClick={() => saveBooking()} className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save booking settings</button>
         {booking.provider === "calcom" && me.bookingProvider !== "calcom" && <p className="text-xs text-gray-400">Save to see your Cal.com webhook details.</p>}
         <StatusLine s={bookingStatus} />
       </Card>
@@ -269,7 +269,7 @@ export default function SettingsPage() {
             <input type="checkbox" checked={outreach.trackOpens} onChange={(e) => setOutreach({ ...outreach, trackOpens: e.target.checked })} />
             Track opens and link clicks (adds an invisible pixel and tracked links)
           </label>
-          <button onClick={saveOutreach} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save outreach rules</button>
+          <button onClick={saveOutreach} className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save outreach rules</button>
           <StatusLine s={outreachStatus} />
         </Card>
       )}
@@ -297,7 +297,7 @@ export default function SettingsPage() {
                 value={company.resendApiKey} onChange={(e) => setCompany({ ...company, resendApiKey: e.target.value })} />
             </div>
           </div>
-          <button onClick={saveCompany} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save company settings</button>
+          <button onClick={saveCompany} className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save company settings</button>
           <div className="border-t border-gray-100 pt-4 flex gap-2">
             <input type="email" className={inputCls} placeholder={me.email} value={testTo} onChange={(e) => setTestTo(e.target.value)} />
             <button onClick={testEmail} className="flex items-center gap-2 px-4 bg-gray-100 text-gray-800 border border-gray-200 text-sm rounded-lg hover:bg-gray-200 font-medium whitespace-nowrap">
@@ -314,7 +314,7 @@ export default function SettingsPage() {
           <div className="flex gap-3">
             <input className={inputCls} placeholder="Label (e.g. Sales Line)" value={pn.label} onChange={(e) => setPn({ ...pn, label: e.target.value })} />
             <input className={`${inputCls} w-48`} placeholder="Phone number" value={pn.number} onChange={(e) => setPn({ ...pn, number: e.target.value })} />
-            <button onClick={addNumber} disabled={!pn.label || !pn.number} className="flex items-center gap-2 px-4 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
+            <button onClick={addNumber} disabled={!pn.label || !pn.number} className="flex items-center gap-2 px-4 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
               <Plus className="w-4 h-4" />Add
             </button>
           </div>
@@ -326,7 +326,7 @@ export default function SettingsPage() {
           <div className="space-y-2">
             {phoneNumbers.map((p) => (
               <div key={p.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                <Phone className="w-4 h-4 text-blue-600" />
+                <Phone className="w-4 h-4 text-brand-600" />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-800">{p.label}</p>
                   <p className="text-xs text-gray-500 font-mono">{formatPhone(p.number.replace(/^\+1/, ""))}</p>
