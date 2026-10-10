@@ -1,7 +1,7 @@
 import { and, desc, eq, gt, inArray, isNull, like, notLike, or, sql } from "drizzle-orm";
 import {
-  db, calls, contacts, campaigns, campaignContacts, bookings, emails, users,
-  type Contact, type Campaign, type User,
+  db, calls, contacts, campaigns, campaignContacts, bookings, deals, emails, users,
+  type Contact, type Campaign, type DealStage, type User,
 } from "@/lib/db";
 import { analysisString, formatTranscript, inferOutcome, stopCall, RETRYABLE_OUTCOMES, type BlandCall, type Outcome } from "@/lib/bland";
 import { enqueueEmail, flushEmails, cancelEmails } from "@/lib/email";
@@ -9,6 +9,7 @@ import { getOrgSettings, type OrgSettings } from "@/lib/settings";
 import { withDefaults, DEFAULT_TEMPLATES, type TemplateVars } from "@/lib/templates";
 import { personalizedBookingLink } from "@/lib/booking";
 import { businessDaysLater, contactTimeZone, formatInTz, shiftBusinessDays } from "@/lib/time";
+import { personalizedOpener } from "@/lib/ai";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
@@ -49,8 +50,9 @@ async function enqueueSequence(opts: {
   owner: User;
   campaign: Campaign;
   org: OrgSettings;
+  extraVars?: TemplateVars;
 }) {
-  const vars = templateVars(opts.contact, opts.owner, opts.org, opts.campaign.id);
+  const vars = templateVars(opts.contact, opts.owner, opts.org, opts.campaign.id, opts.extraVars);
   let queued = 0;
   for (const [i, step] of opts.steps.entries()) {
     const ok = await enqueueEmail({
@@ -157,7 +159,10 @@ export async function processCallResult(callRowId: string, bc: BlandCall) {
       )
       .where(eq(campaignContacts.id, cc.id));
   }
-  if (outcome === "demo-booked") await closeOutQueue(contact.id, outcome);
+  if (outcome === "demo-booked") {
+    await closeOutQueue(contact.id, outcome);
+    await advanceDeal({ contactId: contact.id, ownerId: campaign.ownerId, campaignId: campaign.id, stage: "positive", source: "call" });
+  }
 
   if (campaign.emailsEnabled && owner && updated.email && !updated.emailOptOut) {
     const org = await getOrgSettings();
@@ -183,6 +188,22 @@ export async function processCallResult(callRowId: string, bc: BlandCall) {
 
   await maybeCompleteCampaign(campaign.id);
   return { processed: true, outcome };
+}
+
+const STAGE_ORDER: DealStage[] = ["positive", "demo-booked", "demo-held", "proposal", "won"];
+
+/** Creates the contact's deal or moves it forward (never backward, never out of won/lost). */
+export async function advanceDeal(v: { contactId: string; ownerId: string; campaignId: string | null; stage: DealStage; source: "reply" | "call" | "booking" | "manual" }) {
+  const [existing] = await db.select().from(deals).where(eq(deals.contactId, v.contactId)).limit(1);
+  if (!existing) {
+    await db.insert(deals).values({ ownerId: v.ownerId, contactId: v.contactId, campaignId: v.campaignId, stage: v.stage, source: v.source })
+      .onConflictDoNothing({ target: deals.contactId });
+    return;
+  }
+  if (existing.stage === "lost" || existing.stage === "won") return;
+  if (STAGE_ORDER.indexOf(v.stage) > STAGE_ORDER.indexOf(existing.stage)) {
+    await db.update(deals).set({ stage: v.stage, stageChangedAt: new Date() }).where(eq(deals.id, existing.id));
+  }
 }
 
 /** Stops any further calls/cold emails to a contact across campaigns (e.g. once they want or booked a demo). */
@@ -215,6 +236,12 @@ export async function maybeCompleteCampaign(campaignId: string) {
     .from(calls)
     .where(and(eq(calls.campaignId, campaignId), eq(calls.status, "scheduled")));
   if (inflight > 0) return;
+  // Follow-up emails still queued means the sequence is still running.
+  const [{ queued }] = await db
+    .select({ queued: sql<number>`count(*)::int` })
+    .from(emails)
+    .where(and(eq(emails.campaignId, campaignId), inArray(emails.status, ["pending", "scheduled"])));
+  if (queued > 0) return;
   await db.update(campaigns).set({ status: "completed" }).where(and(eq(campaigns.id, campaignId), eq(campaigns.status, "active")));
 }
 
@@ -303,6 +330,7 @@ export async function handleBookingCreated(input: BookingInput) {
     .returning();
 
   await closeOutQueue(contact.id, "demo-scheduled");
+  await advanceDeal({ contactId: contact.id, ownerId: owner.id, campaignId: campaign?.id ?? null, stage: "demo-booked", source: "booking" });
   // They booked, so stop cold and post-call nurture emails.
   await cancelEmails(and(eq(emails.contactId, contact.id), or(like(emails.kind, "post_call_%"), like(emails.kind, "cold_%")))!);
   // A reschedule that reuses the same booking id: drop reminders queued for the old time.
@@ -359,5 +387,6 @@ export async function handleBookingCanceled(provider: "calcom" | "calendly" | "m
 export async function startColdSequence(campaign: Campaign, contact: Contact, owner: User, org: OrgSettings, start: Date) {
   const tz = contactTimeZone(contact, campaign.timezone);
   const templates = withDefaults(campaign.emailTemplates);
-  return enqueueSequence({ prefix: "cold", steps: templates.cold, start, tz, contact, owner, campaign, org });
+  const opener = campaign.aiPersonalize ? await personalizedOpener(contact) : "";
+  return enqueueSequence({ prefix: "cold", steps: templates.cold, start, tz, contact, owner, campaign, org, extraVars: { ai_opener: opener } });
 }

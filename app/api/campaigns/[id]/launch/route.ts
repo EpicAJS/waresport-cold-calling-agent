@@ -5,6 +5,7 @@ import { authed, canAccess } from "@/lib/auth";
 import { dispatchCampaign } from "@/lib/dispatcher";
 import { getOrgSettings } from "@/lib/settings";
 import { withDefaults } from "@/lib/templates";
+import { activeMailboxFor } from "@/lib/mail";
 
 export const maxDuration = 60;
 
@@ -19,14 +20,15 @@ export const POST = authed(async (_req, { params }, user) => {
 
   const [owner] = await db.select().from(users).where(eq(users.id, campaign.ownerId)).limit(1);
   const org = await getOrgSettings();
-  const emailReady = Boolean(org.resendApiKey && org.fromEmail);
+  const inbox = await activeMailboxFor(campaign.ownerId, campaign.mailboxId);
+  const emailReady = Boolean(inbox || (org.resendApiKey && org.fromEmail));
   const usesBookingLink = JSON.stringify(withDefaults(campaign.emailTemplates)).includes("{{booking_link}}");
 
   if (campaign.channel === "call") {
     if (!process.env.BLAND_AI_API_KEY) return NextResponse.json({ error: "BLAND_AI_API_KEY is not configured." }, { status: 400 });
     if (!campaign.script.trim()) return NextResponse.json({ error: "The call script is empty." }, { status: 400 });
   } else {
-    if (!emailReady) return NextResponse.json({ error: "Email isn't configured yet — an admin must add a Resend key and from address in Settings." }, { status: 400 });
+    if (!emailReady) return NextResponse.json({ error: "Connect your Gmail or Outlook inbox in Settings before launching an email campaign." }, { status: 400 });
     if (usesBookingLink && !owner?.bookingUrl) {
       return NextResponse.json({ error: "Your emails use {{booking_link}} — add your booking link in Settings first." }, { status: 400 });
     }
@@ -36,7 +38,7 @@ export const POST = authed(async (_req, { params }, user) => {
   const scheduled = await dispatchCampaign(campaign.id);
 
   const warnings: string[] = [];
-  if (campaign.channel === "call" && campaign.emailsEnabled && !emailReady) warnings.push("Follow-up emails are on but email isn't configured, so none will be sent.");
+  if (campaign.channel === "call" && campaign.emailsEnabled && !emailReady) warnings.push("Follow-up emails are on but you have no connected inbox, so none will be sent until you connect one.");
   if (campaign.channel === "call" && !owner?.bookingUrl) warnings.push("You have no booking link in Settings, so prospects who want a demo won't get one automatically.");
   return NextResponse.json({ ok: true, scheduled, warnings });
 });

@@ -10,6 +10,16 @@ export const OUTCOME_LABEL: Record<string, string> = {
   failed: "Failed",
   completed: "Completed",
   pending: "Queued",
+  emailed: "Emailed",
+  "dedup-blocked": "Skipped — teammate contacted",
+  "no-email": "No email",
+  "not-callable": "No phone",
+  "demo-scheduled": "Demo scheduled",
+  "replied-positive": "Replied — interested",
+  "replied-needs-info": "Replied — needs info",
+  "replied-not-interested": "Replied — not interested",
+  "replied-negative": "Replied — negative",
+  "replied-other": "Replied",
 };
 
 export const OUTCOME_COLOR: Record<string, string> = {
@@ -75,6 +85,9 @@ export const EMAIL_KIND_LABEL = (kind: string) => {
   if (kind === "booking_link") return "Booking link";
   if (kind === "reminder_24h") return "Reminder (24h)";
   if (kind === "reminder_1h") return "Reminder (1h)";
+  if (kind === "manual") return "Sent by hand";
+  if (kind === "followup") return "Follow-up";
+  if (kind === "reply") return "Reply";
   const m = kind.match(/^(post_call|post_demo|cold)_(\d+)$/);
   if (m) return `${{ post_call: "Post-call", post_demo: "Post-demo", cold: "Cold email" }[m[1]]} #${m[2]}`;
   return kind;
@@ -97,3 +110,8 @@ export function fmtDateTime(d: string | Date | null | undefined) {
 
 export const inputCls =
   "w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500";
+
+/** Shows template placeholders like {{club_name}} as {club_name} for readability. */
+export function prettySubject(subject: string) {
+  return subject.replace(/\{\{\s*(\w+)\s*\}\}/g, "{$1}");
+}

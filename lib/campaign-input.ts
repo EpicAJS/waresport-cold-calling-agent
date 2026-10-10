@@ -47,6 +47,12 @@ export function parseCampaignFields(body: Record<string, unknown>) {
   if (out.windowStart && out.windowEnd && String(out.windowStart) >= String(out.windowEnd)) errors.push("End time must be after start time.");
   if (body.timezone !== undefined) { if (isValidTimeZone(String(body.timezone))) out.timezone = body.timezone; else errors.push("Invalid timezone."); }
   if (body.emailsEnabled !== undefined) out.emailsEnabled = Boolean(body.emailsEnabled);
+  if (body.aiPersonalize !== undefined) out.aiPersonalize = Boolean(body.aiPersonalize);
+  if (body.mailboxId !== undefined) {
+    if (body.mailboxId === null || body.mailboxId === "") out.mailboxId = null;
+    else if (typeof body.mailboxId === "string" && /^[0-9a-f-]{36}$/i.test(body.mailboxId)) out.mailboxId = body.mailboxId;
+    else errors.push("Invalid sending inbox.");
+  }
   if (body.emailTemplates !== undefined) {
     if (validateTemplates(body.emailTemplates)) out.emailTemplates = body.emailTemplates; else errors.push("Email templates are invalid.");
   }

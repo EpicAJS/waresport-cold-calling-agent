@@ -11,6 +11,7 @@ import { STAGE_COLOR, STAGE_LABEL, TIMEZONES, inputCls } from "@/lib/labels";
 import type { EmailTemplates } from "@/lib/db/schema";
 import ScriptEditor, { DEFAULT_SCRIPT } from "@/components/script-editor";
 import EmailTemplatesEditor from "@/components/email-templates-editor";
+import SenderSettings from "@/components/sender-settings";
 
 type Contact = { id: string; clubName: string; phone: string; email: string | null; city: string; state: string; stage: string; emailOptOut: boolean };
 type PhoneNumber = { id: string; label: string; number: string };
@@ -33,6 +34,8 @@ export default function NewCampaignPage() {
   const [fromNumber, setFromNumber] = useState("");
   const [emailsEnabled, setEmailsEnabled] = useState(true);
   const [templates, setTemplates] = useState<EmailTemplates>(DEFAULT_TEMPLATES);
+  const [mailboxId, setMailboxId] = useState<string | null>(null);
+  const [aiPersonalize, setAiPersonalize] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [contactSearch, setContactSearch] = useState("");
   const [saving, setSaving] = useState(false);
@@ -82,6 +85,8 @@ export default function NewCampaignPage() {
         fromNumber: fromNumber || null,
         emailsEnabled: channel === "email" ? true : emailsEnabled,
         emailTemplates: templates,
+        mailboxId,
+        aiPersonalize,
         contactIds: selectedEligible.map((c) => c.id),
       }),
     });
@@ -237,6 +242,9 @@ export default function NewCampaignPage() {
               )}
             </div>
             {(channel === "email" || emailsEnabled) && (
+              <SenderSettings mailboxId={mailboxId} onMailbox={setMailboxId} aiPersonalize={aiPersonalize} onAiPersonalize={setAiPersonalize} channel={channel} />
+            )}
+            {(channel === "email" || emailsEnabled) && (
               <EmailTemplatesEditor value={templates} onChange={setTemplates} channel={channel} brief={description} />
             )}
           </div>
@@ -328,7 +336,7 @@ export default function NewCampaignPage() {
         <div className="flex gap-2">
           {step < steps.length ? (
             <button onClick={() => setStep((s) => s + 1)} disabled={step === 1 && !name.trim()}
-              className="px-5 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">
+              className="px-5 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
               Continue
             </button>
           ) : (
@@ -338,7 +346,7 @@ export default function NewCampaignPage() {
                 Save as Draft
               </button>
               <button onClick={() => handleSave(true)} disabled={saving || selectedEligible.length === 0}
-                className="px-5 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 disabled:opacity-50">
+                className="px-5 py-2 bg-green-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
                 {saving ? "Saving..." : "Launch Campaign"}
               </button>
             </>

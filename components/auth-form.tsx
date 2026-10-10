@@ -13,13 +13,14 @@ type Props = {
   endpoint: string;
   submitLabel: string;
   footer?: React.ReactNode;
+  header?: React.ReactNode;
 };
 
-export default function AuthForm({ title, subtitle, fields, endpoint, submitLabel, footer }: Props) {
+export default function AuthForm({ title, subtitle, fields, endpoint, submitLabel, footer, header }: Props) {
   const router = useRouter();
   const search = useSearchParams();
   const [values, setValues] = useState<Record<string, string>>({});
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(search.get("error"));
   const [busy, setBusy] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -43,16 +44,17 @@ export default function AuthForm({ title, subtitle, fields, endpoint, submitLabe
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-base px-4">
       <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl border border-gray-200 p-6 space-y-4">
-        <div className="flex justify-center">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="https://www.waresport.com/WSlogo4.png" alt="Waresport" className="h-10 object-contain" />
+        <div className="text-center">
+          <p className="text-[15px] font-semibold text-gray-900 tracking-tight">Waresport</p>
+          <p className="text-[11px] font-medium text-blue-500">Outreach platform</p>
         </div>
         <div>
           <h1 className="text-xl font-bold text-gray-900 text-center">{title}</h1>
           {subtitle && <p className="text-sm text-gray-500 text-center mt-1">{subtitle}</p>}
         </div>
+        {header}
         {fields.map((f) => (
           <div key={f.name}>
             <label className="text-sm font-medium text-gray-700 block mb-1.5" htmlFor={f.name}>{f.label}</label>
@@ -71,7 +73,7 @@ export default function AuthForm({ title, subtitle, fields, endpoint, submitLabe
         <button
           type="submit"
           disabled={busy}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50"
         >
           {busy && <Loader2 className="w-4 h-4 animate-spin" />}
           {submitLabel}

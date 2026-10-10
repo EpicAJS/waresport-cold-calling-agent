@@ -24,7 +24,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-base px-4">
       <form onSubmit={submit} className="w-full max-w-sm bg-white rounded-xl border border-gray-200 p-6 space-y-4">
         <div>
           <h1 className="text-xl font-bold text-gray-900 text-center">Reset your password</h1>
@@ -40,7 +40,7 @@ export default function ForgotPasswordPage() {
             </div>
             {result && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{result.text}</p>}
             <button type="submit" disabled={busy}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50">
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50">
               {busy && <Loader2 className="w-4 h-4 animate-spin" />}Send reset link
             </button>
           </>

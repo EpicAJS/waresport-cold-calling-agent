@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { sql } from "drizzle-orm";
 import { db, users } from "@/lib/db";
 import AuthForm from "@/components/auth-form";
+import OAuthButtons from "@/components/oauth-buttons";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,7 @@ export default async function SetupPage() {
   return (
     <Suspense>
       <AuthForm
+        header={<OAuthButtons />}
         title="Create admin account"
         subtitle="This first account manages the team, API settings, and phone numbers."
         endpoint="/api/auth/setup"

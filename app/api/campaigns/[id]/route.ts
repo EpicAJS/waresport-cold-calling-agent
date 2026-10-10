@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { db, campaigns, campaignContacts, contacts, emails, users } from "@/lib/db";
 import { authed, canAccess } from "@/lib/auth";
 import { parseCampaignFields } from "@/lib/campaign-input";
@@ -28,8 +28,18 @@ export const GET = authed(async (_req, { params }, user) => {
     .innerJoin(contacts, eq(campaignContacts.contactId, contacts.id))
     .where(eq(campaignContacts.campaignId, campaign.id))
     .orderBy(asc(campaignContacts.createdAt));
+  const steps = (await db.execute(sql`
+    select e.kind,
+      count(*) filter (where e.status in ('sent','scheduled'))::int as sent,
+      count(*) filter (where e.status = 'pending')::int as queued,
+      count(*) filter (where e.open_count > 0)::int as opened,
+      count(*) filter (where e.replied_at is not null)::int as replied,
+      count(*) filter (where e.bounced_at is not null)::int as bounced
+    from emails e where e.campaign_id = ${campaign.id}
+    group by e.kind`)) as unknown as Array<{ kind: string; sent: number; queued: number; opened: number; replied: number; bounced: number }>;
   return NextResponse.json({
     ...campaign,
+    steps,
     contacts: members.map(({ cc, contact }) => ({
       ...contact,
       queueStatus: cc.status,

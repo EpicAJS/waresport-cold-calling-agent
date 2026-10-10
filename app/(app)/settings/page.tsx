@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
+import InboxesCard from "@/components/inboxes-card";
 import {
-  Phone, Plus, Trash2, Settings, Mail, CheckCircle, AlertCircle, Send, User, CalendarDays, Users, Building2, Copy, KeyRound,
+  Phone, Plus, Trash2, Settings, Mail, CheckCircle, AlertCircle, Send, User, CalendarDays, ShieldCheck, Building2, Copy, KeyRound,
 } from "lucide-react";
 import { formatPhone } from "@/lib/utils";
 import { inputCls } from "@/lib/labels";
@@ -14,9 +15,8 @@ type Me = {
 type Org = {
   companyName: string; fromEmail: string; mailingAddress: string; resendKeySet: boolean; resendKeySource: string;
   integrations: Record<string, boolean>; appUrl: string; isAdmin: boolean;
+  dedupWindowDays: number; mailboxDailyLimit: number; trackOpens: boolean;
 };
-type Member = { id: string; name: string; email: string; role: string; disabled: boolean };
-type Invite = { id: string; email: string; role: string; expiresAt: string };
 type PhoneNumber = { id: string; label: string; number: string };
 type Status = { ok: boolean; msg: string } | null;
 
@@ -59,7 +59,6 @@ async function send(url: string, method: string, body?: unknown) {
 export default function SettingsPage() {
   const [me, setMe] = useState<Me | null>(null);
   const [org, setOrg] = useState<Org | null>(null);
-  const [team, setTeam] = useState<{ members: Member[]; invites: Invite[] }>({ members: [], invites: [] });
   const [phoneNumbers, setPhoneNumbers] = useState<PhoneNumber[]>([]);
 
   const [profile, setProfile] = useState({ name: "", currentPassword: "", newPassword: "" });
@@ -72,8 +71,8 @@ export default function SettingsPage() {
   const [companyStatus, setCompanyStatus] = useState<Status>(null);
   const [testTo, setTestTo] = useState("");
 
-  const [invite, setInvite] = useState({ email: "", role: "rep" });
-  const [inviteStatus, setInviteStatus] = useState<Status>(null);
+  const [outreach, setOutreach] = useState({ dedupWindowDays: 30, mailboxDailyLimit: 150, trackOpens: true });
+  const [outreachStatus, setOutreachStatus] = useState<Status>(null);
 
   const [pn, setPn] = useState({ label: "", number: "" });
   const [pnStatus, setPnStatus] = useState<Status>(null);
@@ -88,10 +87,7 @@ export default function SettingsPage() {
     setProfile((p) => ({ ...p, name: m.name }));
     setBooking((b) => ({ ...b, provider: m.bookingProvider, url: m.bookingUrl }));
     setCompany((c) => ({ ...c, companyName: o.companyName, fromEmail: o.fromEmail, mailingAddress: o.mailingAddress }));
-    if (m.role === "admin") {
-      const t = await fetch("/api/team");
-      if (t.ok) setTeam(await t.json());
-    }
+    setOutreach({ dedupWindowDays: o.dedupWindowDays, mailboxDailyLimit: o.mailboxDailyLimit, trackOpens: o.trackOpens });
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -132,26 +128,9 @@ export default function SettingsPage() {
     setCompanyStatus(r.ok ? { ok: true, msg: `Test email sent to ${testTo || me.email}.` } : { ok: false, msg: r.data.error ?? "Test failed." });
   };
 
-  const sendInvite = async () => {
-    const r = await send("/api/team", "POST", invite);
-    setInviteStatus(r.ok
-      ? { ok: true, msg: r.data.emailed ? `Invite emailed to ${invite.email}. Link: ${r.data.link}` : `Email isn't configured, so share this link with them: ${r.data.link}` }
-      : { ok: false, msg: r.data.error ?? "Invite failed." });
-    if (r.ok) setInvite({ email: "", role: "rep" });
-    load();
-  };
-
-  const updateMember = async (id: string, patch: Partial<Member>) => {
-    const r = await send(`/api/team/${id}`, "PATCH", patch);
-    if (!r.ok) setInviteStatus({ ok: false, msg: r.data.error ?? "Update failed." });
-    load();
-  };
-
-  const resetPassword = async (m: Member) => {
-    const r = await send(`/api/team/${m.id}/reset`, "POST");
-    setInviteStatus(r.ok
-      ? { ok: true, msg: `${r.data.emailed ? `Reset link emailed to ${m.email}.` : "Email isn't configured, so send them this link yourself."} Link (valid 24 hours): ${r.data.link}` }
-      : { ok: false, msg: r.data.error ?? "Couldn't create a reset link." });
+  const saveOutreach = async () => {
+    const r = await send("/api/settings/org", "PUT", outreach);
+    setOutreachStatus(r.ok ? { ok: true, msg: "Outreach settings saved." } : { ok: false, msg: r.data.error ?? "Save failed." });
   };
 
   const addNumber = async () => {
@@ -164,8 +143,10 @@ export default function SettingsPage() {
   const integrationRows: Array<[string, boolean, string]> = [
     ["Bland.ai (calls)", org.integrations.bland, "BLAND_AI_API_KEY"],
     ["SerpAPI (club search)", org.integrations.serpapi, "SERP_API_KEY"],
-    ["OpenAI (AI writer)", org.integrations.openai, "OPENAI_API_KEY"],
-    ["Email (Resend)", org.integrations.email, "Company settings below"],
+    ["Google sign-in & Gmail", org.integrations.google, "GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET"],
+    ["Microsoft sign-in & Outlook", org.integrations.microsoft, "MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRET"],
+    ["OpenAI (reply AI, writer)", org.integrations.openai, "OPENAI_API_KEY"],
+    ["System email (Resend)", org.integrations.email, "Company settings below"],
     ["Scheduled jobs", org.integrations.cron, "CRON_SECRET"],
     ["Public URL for webhooks", org.integrations.publicUrl, `APP_URL (now ${org.appUrl})`],
   ];
@@ -176,9 +157,11 @@ export default function SettingsPage() {
         <Settings className="w-6 h-6 text-gray-400" />
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-500 text-sm mt-0.5">{isAdmin ? "Your profile, team, and company configuration" : "Your profile and booking link"}</p>
+          <p className="text-gray-500 text-sm mt-0.5">{isAdmin ? "Your inbox, profile, outreach rules, and company configuration" : "Your inbox, profile, and booking link"}</p>
         </div>
       </div>
+
+      <Suspense><InboxesCard meId={me.id} /></Suspense>
 
       <Card icon={User} title="My profile">
         <div className="grid grid-cols-2 gap-3">
@@ -200,7 +183,7 @@ export default function SettingsPage() {
           </div>
         </div>
         <p className="text-xs text-gray-400">Your name appears in the &quot;from&quot; line of your emails, and replies go to {me.email}.</p>
-        <button onClick={saveProfile} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium">Save profile</button>
+        <button onClick={saveProfile} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save profile</button>
         <StatusLine s={profileStatus} />
       </Card>
 
@@ -253,7 +236,7 @@ export default function SettingsPage() {
                 <p className="text-xs text-gray-600">In Calendly open <strong>Integrations → API & Webhooks</strong>, create a personal access token, and paste it here.</p>
                 <div className="flex gap-2">
                   <input type="password" className={inputCls} placeholder="Personal access token" value={booking.token} onChange={(e) => setBooking({ ...booking, token: e.target.value })} />
-                  <button onClick={connectCalendly} disabled={!booking.token} className="flex items-center gap-1.5 px-3 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-900 disabled:opacity-50">
+                  <button onClick={connectCalendly} disabled={!booking.token} className="flex items-center gap-1.5 px-3 bg-gray-100 text-gray-800 border border-gray-200 text-sm rounded-lg hover:bg-gray-200 disabled:opacity-50">
                     <KeyRound className="w-4 h-4" />Connect
                   </button>
                 </div>
@@ -261,61 +244,38 @@ export default function SettingsPage() {
             )}
           </div>
         )}
-        <button onClick={() => saveBooking()} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium">Save booking settings</button>
+        <button onClick={() => saveBooking()} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save booking settings</button>
         {booking.provider === "calcom" && me.bookingProvider !== "calcom" && <p className="text-xs text-gray-400">Save to see your Cal.com webhook details.</p>}
         <StatusLine s={bookingStatus} />
       </Card>
 
       {isAdmin && (
-        <Card icon={Users} title="Team">
-          <div className="space-y-2">
-            {team.members.map((m) => (
-              <div key={m.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${m.disabled ? "text-gray-400 line-through" : "text-gray-800"}`}>{m.name}{m.id === me.id && " (you)"}</p>
-                  <p className="text-xs text-gray-500">{m.email}</p>
-                </div>
-                <select className="border border-gray-200 rounded-lg px-2 py-1 text-xs" value={m.role} onChange={(e) => updateMember(m.id, { role: e.target.value })}>
-                  <option value="rep">Sales rep</option>
-                  <option value="admin">Admin</option>
-                </select>
-                {m.id !== me.id && !m.disabled && (
-                  <button onClick={() => resetPassword(m)} className="text-xs text-blue-600 hover:underline">Reset password</button>
-                )}
-                {m.id !== me.id && (
-                  <button onClick={() => updateMember(m.id, { disabled: !m.disabled })} className="text-xs text-gray-500 hover:underline w-14 text-right">
-                    {m.disabled ? "Enable" : "Disable"}
-                  </button>
-                )}
-              </div>
-            ))}
-            {team.invites.map((i) => (
-              <div key={i.id} className="flex items-center gap-3 p-3 border border-dashed border-gray-200 rounded-lg">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-gray-600">{i.email}</p>
-                  <p className="text-xs text-gray-400">Invited as {i.role} · expires {new Date(i.expiresAt).toLocaleDateString()}</p>
-                </div>
-                <button onClick={() => send(`/api/team/invites/${i.id}`, "DELETE").then(load)} className="text-xs text-red-500 hover:underline">Revoke</button>
-              </div>
-            ))}
+        <Card icon={ShieldCheck} title="Outreach rules">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Dedup window (days)</label>
+              <input type="number" min={0} max={365} className={inputCls} value={outreach.dedupWindowDays}
+                onChange={(e) => setOutreach({ ...outreach, dedupWindowDays: Number(e.target.value) })} />
+              <p className="text-[11px] text-gray-400 mt-1">Skip prospects a teammate emailed or called within this many days. 0 turns it off.</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Max emails per inbox per day</label>
+              <input type="number" min={1} max={2000} className={inputCls} value={outreach.mailboxDailyLimit}
+                onChange={(e) => setOutreach({ ...outreach, mailboxDailyLimit: Number(e.target.value) })} />
+              <p className="text-[11px] text-gray-400 mt-1">Protects deliverability. Gmail allows ~500/day (2,000 on Workspace).</p>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <input className={inputCls} type="email" placeholder="rep@yourcompany.com" value={invite.email} onChange={(e) => setInvite({ ...invite, email: e.target.value })} />
-            <select className="border border-gray-200 rounded-lg px-2 text-sm" value={invite.role} onChange={(e) => setInvite({ ...invite, role: e.target.value })}>
-              <option value="rep">Sales rep</option>
-              <option value="admin">Admin</option>
-            </select>
-            <button onClick={sendInvite} disabled={!invite.email} className="flex items-center gap-1.5 px-4 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">
-              <Plus className="w-4 h-4" />Invite
-            </button>
-          </div>
-          <p className="text-xs text-gray-400">Reps see only their own contacts, campaigns, calls, and emails. Admins see everyone&apos;s.</p>
-          <StatusLine s={inviteStatus} />
+          <label className="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" checked={outreach.trackOpens} onChange={(e) => setOutreach({ ...outreach, trackOpens: e.target.checked })} />
+            Track opens and link clicks (adds an invisible pixel and tracked links)
+          </label>
+          <button onClick={saveOutreach} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save outreach rules</button>
+          <StatusLine s={outreachStatus} />
         </Card>
       )}
 
       {isAdmin && (
-        <Card icon={Building2} title="Company & email sending">
+        <Card icon={Building2} title="Company & system email">
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Company name</label>
@@ -337,10 +297,10 @@ export default function SettingsPage() {
                 value={company.resendApiKey} onChange={(e) => setCompany({ ...company, resendApiKey: e.target.value })} />
             </div>
           </div>
-          <button onClick={saveCompany} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 font-medium">Save company settings</button>
+          <button onClick={saveCompany} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save company settings</button>
           <div className="border-t border-gray-100 pt-4 flex gap-2">
             <input type="email" className={inputCls} placeholder={me.email} value={testTo} onChange={(e) => setTestTo(e.target.value)} />
-            <button onClick={testEmail} className="flex items-center gap-2 px-4 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-900 font-medium whitespace-nowrap">
+            <button onClick={testEmail} className="flex items-center gap-2 px-4 bg-gray-100 text-gray-800 border border-gray-200 text-sm rounded-lg hover:bg-gray-200 font-medium whitespace-nowrap">
               <Send className="w-3.5 h-3.5" />Send test
             </button>
           </div>
@@ -354,7 +314,7 @@ export default function SettingsPage() {
           <div className="flex gap-3">
             <input className={inputCls} placeholder="Label (e.g. Sales Line)" value={pn.label} onChange={(e) => setPn({ ...pn, label: e.target.value })} />
             <input className={`${inputCls} w-48`} placeholder="Phone number" value={pn.number} onChange={(e) => setPn({ ...pn, number: e.target.value })} />
-            <button onClick={addNumber} disabled={!pn.label || !pn.number} className="flex items-center gap-2 px-4 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            <button onClick={addNumber} disabled={!pn.label || !pn.number} className="flex items-center gap-2 px-4 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
               <Plus className="w-4 h-4" />Add
             </button>
           </div>

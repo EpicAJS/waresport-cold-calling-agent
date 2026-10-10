@@ -283,7 +283,7 @@ export default function ContactsPage() {
         <button
           onClick={handleManualAdd}
           disabled={!manualName || (!manualPhone && !manualEmail)}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
         >
           Save to Contact Book
         </button>
@@ -378,7 +378,7 @@ export default function ContactsPage() {
               <button
                 onClick={handleFind}
                 disabled={finding || !findQuery || !findCity}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
               >
                 {finding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
                 {finding ? "Searching..." : "Search"}
@@ -464,7 +464,7 @@ export default function ContactsPage() {
                   <button
                     onClick={addFindResultsToBook}
                     disabled={addingToBook}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
                   >
                     {addingToBook ? "Saving..." : `Save ${findResults.length} contacts to Contact Book`}
                   </button>
@@ -506,7 +506,7 @@ export default function ContactsPage() {
                   <button
                     onClick={handleImport}
                     disabled={!importText}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
                   >
                     Import to Contact Book
                   </button>
@@ -562,7 +562,7 @@ export default function ContactsPage() {
                 <button
                   onClick={handleAddToCampaign}
                   disabled={!targetCampaign || addingToCampaign}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50"
                 >
                   {addingToCampaign ? "Adding..." : "Add to Campaign"}
                 </button>
@@ -593,7 +593,7 @@ export default function ContactsPage() {
                   <span className="text-sm text-blue-600 font-medium">{selectedBook.size} selected</span>
                   <button
                     onClick={() => { setShowCampaignPicker(true); loadCampaigns(); }}
-                    className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+                    className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90"
                   >
                     Add to Campaign
                   </button>

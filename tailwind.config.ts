@@ -1,57 +1,57 @@
 import type { Config } from "tailwindcss";
 
+const v = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
+
+// Every hue reads from theme variables so existing utility classes follow the dark/light theme:
+// 50–100 tinted backgrounds, 200 borders, 300–500 the base hue, 600 solid fills, 700+ readable text.
+const hue = (name: string) => ({
+  50: `rgb(var(--${name}) / var(--soft-alpha))`,
+  100: `rgb(var(--${name}) / var(--soft-alpha))`,
+  200: `rgb(var(--${name}) / 0.3)`,
+  300: v(name),
+  400: v(name),
+  500: v(name),
+  600: v(`${name}-strong`),
+  700: v(`${name}-text`),
+  800: v(`${name}-text`),
+  900: v(`${name}-text`),
+});
+
+const neutral = {
+  50: v("bg-card"),
+  100: v("bg-elevated"),
+  200: v("border"),
+  300: v("border-strong"),
+  400: v("text-muted"),
+  500: v("text-secondary"),
+  600: v("text-secondary"),
+  700: v("text-primary"),
+  800: v("text-primary"),
+  900: v("text-primary"),
+};
+
 const config: Config = {
   darkMode: ["class"],
-  content: [
-    "./pages/**/*.{ts,tsx}",
-    "./components/**/*.{ts,tsx}",
-    "./app/**/*.{ts,tsx}",
-    "./lib/**/*.{ts,tsx}",
-  ],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
-    container: {
-      center: true,
-      padding: "2rem",
-      screens: {
-        "2xl": "1400px",
-      },
-    },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
+        white: v("bg-surface"),
+        base: v("bg-base"),
+        gray: neutral,
+        slate: neutral,
+        blue: hue("blue"),
+        green: hue("green"),
+        emerald: hue("green"),
+        red: hue("red"),
+        yellow: hue("yellow"),
+        amber: hue("amber"),
+        purple: hue("purple"),
+        orange: hue("orange"),
       },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+      fontFamily: {
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
     },
   },

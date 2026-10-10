@@ -2,7 +2,7 @@ import type { EmailTemplate, EmailTemplates } from "@/lib/db/schema";
 
 export const TEMPLATE_VARIABLES = [
   "club_name", "contact_name", "rep_name", "rep_email", "company_name",
-  "booking_link", "demo_date", "demo_time",
+  "booking_link", "demo_date", "demo_time", "ai_opener",
 ] as const;
 
 export type TemplateVars = Partial<Record<(typeof TEMPLATE_VARIABLES)[number], string>>;
@@ -110,6 +110,8 @@ All the best,
       subject: "Saving {{club_name}} 15+ hours a week on admin",
       body: `Hi {{contact_name}},
 
+{{ai_opener}}
+
 I'm {{rep_name}} with {{company_name}}. We help sports clubs run registrations, scheduling, and payments from one platform — most clubs save 15–20 hours a week.
 
 Would a 15-minute demo be worthwhile? You can pick a time here:
@@ -151,7 +153,9 @@ function escapeHtml(s: string) {
 }
 
 function fill(text: string, vars: TemplateVars, transform: (s: string) => string = (s) => s) {
-  return text.replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key: string) => transform(vars[key as keyof TemplateVars] ?? ""));
+  return text
+    .replace(/\{\{\s*(\w+)\s*\}\}/g, (_, key: string) => transform(vars[key as keyof TemplateVars] ?? ""))
+    .replace(/\n[ \t]*\n(?:[ \t]*\n)+/g, "\n\n");
 }
 
 function linkify(escaped: string) {

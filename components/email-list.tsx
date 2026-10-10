@@ -16,6 +16,10 @@ export type EmailRow = {
   clubName: string;
   campaignName: string | null;
   ownerName: string;
+  openCount?: number;
+  clickCount?: number;
+  repliedAt?: string | null;
+  bouncedAt?: string | null;
 };
 
 export function emailDisplayStatus(e: Pick<EmailRow, "status" | "sendAt">) {
@@ -69,6 +73,9 @@ export default function EmailList({ emails, onChanged, showCampaign = true }: { 
                   </p>
                 </div>
               </button>
+              {e.bouncedAt ? <span className="chip chip-neg">Bounced</span>
+                : e.repliedAt ? <span className="chip chip-pos">Replied</span>
+                : e.openCount ? <span className="chip chip-info" title={`${e.clickCount ?? 0} clicks`}>Opened {e.openCount}×</span> : null}
               <span className="text-xs text-gray-400 shrink-0">{fmtDateTime(e.sendAt)}</span>
               <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${STATUS_STYLE[status] ?? ""}`}>{status}</span>
               {cancellable && (

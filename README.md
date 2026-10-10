@@ -1,112 +1,134 @@
-# Waresport Cold Calling Agent
+# Waresport Outreach Platform
 
-An AI outbound sales workspace for sports clubs. Reps find clubs, run AI voice-call or cold-email campaigns,
-and the app handles the follow-up: booking-link emails, demo reminders, post-call and post-demo nurture emails,
-and retries for calls nobody picked up.
+A centralized sales outreach workspace for the Waresport team:
+
+- Every rep and intern connects their **Gmail or Outlook** inbox.
+- Campaigns send from those inboxes, and every reply is tracked in **one shared dashboard**.
+- An **AI layer** classifies each reply, routes it to the right rep, and drafts a response they can send in one click.
+- **AI voice calling** (Bland.ai) is still available as a second channel.
 
 ## What it does
 
-- **Find contacts**: search Google Maps (SerpAPI) and OpenStreetMap for clubs, or import a CSV or add contacts by hand.
-- **Call campaigns**: a Bland.ai voice agent calls each contact using your script.
-  - Calls respect a **daily limit**, **calling hours in each contact's local timezone** (inferred from their state), and **weekdays only**.
-  - No-answer or voicemail calls are **retried on the next business day** (2 retries by default, configurable per campaign).
-  - On every call the agent asks for the prospect's **email and best phone number**. Both are stored, and email is the primary follow-up channel.
-  - Do-not-call requests are honored automatically.
-- **Email campaigns**: cold email sequences to contacts that have an email address. They include an unsubscribe link and your mailing address.
-- **Automated follow-up emails**. Every template is editable per campaign:
-  - booking link, sent right after a prospect says yes to a demo
-  - post-call follow-ups for interested, callback, or never-reached contacts
-  - reminders 24 hours and 1 hour before the demo
-  - post-demo follow-ups
-- **Demo booking**:
-  - each rep has their own booking link
-  - **Cal.com** or **Calendly** webhooks record the real booked time, handle reschedules and cancellations, and stop nurture emails
-  - a plain link works too, with demos logged by hand on the Demos page
-- **AI writer** (OpenAI): drafts or improves call scripts and email sequences.
-- **Team**:
-  - email + password accounts; the first user becomes admin, and admins invite reps
-  - "Forgot password?" on the login page emails a reset link; admins can also create a reset link for any teammate in Settings → Team
-  - reps see only their own data; admins see everyone's
-  - API keys and phone numbers are shared and admin-managed
+- **Sign in with Google or Microsoft.** This also connects that inbox. Email and password still work as a fallback.
+  - The first user becomes admin. After that it's invite-only (roles: Admin, Sales, Intern).
+  - Reps and interns see only their own work; admins see everything.
+- **Campaigns you build and launch in the platform.**
+  - Email sequences: initial email plus follow-ups, which stop as soon as someone replies.
+  - Follow-ups thread under the first email in the rep's own Gmail or Outlook.
+  - Daily send limits, sending hours in each contact's local timezone, and weekdays only.
+  - AI-personalized opening lines written from each club's website.
+  - AI phone-call campaigns are still available.
+- **AI Inbox.** Every connected inbox is scanned about once a minute while the app is open, and every 5 minutes through the scheduler.
+  - Replies are classified as **interested / needs more info / not interested / negative**. Out-of-office replies and bounces are detected separately.
+  - Each reply is routed to the rep who sent the email, with a suggested reply they can edit and send in one click (it threads correctly).
+  - Interested replies open a deal, and any reply stops the automated follow-ups.
+  - "Remove me" requests unsubscribe the contact, and bounces mark the address as dead.
+  - Only replies from people you emailed, or who are in your contacts, are stored. Personal mail is never saved.
+- **Dashboard (Overview).**
+  - Stat cards: positive, negative, bounced, no response, active campaigns.
+  - Campaign open and reply rates, subject-line performance, and the outreach funnel.
+  - AI reply monitor and rep activity.
+  - **Hot lead signals**: repeated opens or link clicks.
+  - **Revenue pipeline.**
+  - **Dedup shield**: prospects a teammate already contacted are skipped automatically.
+- **Admin analytics.**
+  - Team-wide open and reply rates by **subject line**, by rep and by campaign, filterable by rep and period.
+  - Daily activity chart and reply-intent breakdown.
+- **Pipeline.** Positive reply → demo booked → demo held → proposal → closed, with deal values.
+  - Deals advance automatically from replies, calls and bookings.
+- Also included: contact finder (Google Maps and OpenStreetMap), CSV import, Cal.com and Calendly booking tracking, demo reminders and post-demo emails, unsubscribe handling, and password reset.
 
-## Local development
+## Run it locally
 
-Requirements: Node 20+ and a Postgres database.
+Requirements: Node 20+ and Postgres (a free [Neon](https://neon.tech) database works).
 
 ```bash
 cp .env.example .env.local      # fill in DATABASE_URL and AUTH_SECRET at minimum
 npm install
-npm run db:migrate              # creates the tables
-npm run dev                     # http://localhost:3000 → create the admin account
+npm run db:migrate
+npm run dev                     # http://localhost:3000
 ```
 
-Webhooks can't reach `localhost`. While developing, use **Check results** on the Calls page or a campaign page to pull call outcomes from Bland.
+**Just want to see the UI?** Point `DATABASE_URL` at an *empty* database, then:
 
-After changing `lib/db/schema.ts`, run `npm run db:generate` to create a new migration, then `npm run db:migrate`.
+```bash
+npm run db:migrate
+npm run db:seed-demo -- --confirm   # sign in as admin@demo.waresport.com / demo-password
+```
 
-## Deploying to Vercel (Hobby works)
+The seed creates a demo team, campaigns, replies, hot leads, deals and dedup blocks. Its inboxes are placeholders, so nothing is actually sent or scanned. The seed refuses to run on a database that already has users.
 
-1. Import the repo into Vercel.
-2. Add a Postgres database: **Storage → Neon (Marketplace)**. This sets `DATABASE_URL` for you.
-3. Add the other environment variables from `.env.example` (`AUTH_SECRET`, `CRON_SECRET`, `APP_URL`, `BLAND_AI_API_KEY`, `WEBHOOK_SECRET`, `SERP_API_KEY`, `OPENAI_API_KEY`).
-4. Deploy. The `vercel-build` script runs database migrations before building.
-5. Open the site and create the admin account. Then set up Settings → Company (Resend key, from address, mailing address) and Settings → My demo booking link.
+## Connecting Gmail and Outlook (one-time admin setup)
 
-`vercel.json` schedules `/api/cron/dispatch` **once a day at 11:00 UTC** (Hobby only allows daily crons). Each run does four things:
+Sign-in and inbox access need an OAuth app per provider. The redirect URIs are:
 
-- pre-schedules that day's calls through Bland's `start_time`, spread across each contact's calling window
-- starts cold-email sequences, up to each campaign's daily limit
-- hands emails due in the next ~2 days to Resend's scheduled sending
-- picks up any call results whose webhook was missed
+- Google: `https://YOUR-APP/api/oauth/google/callback`
+- Microsoft: `https://YOUR-APP/api/oauth/microsoft/callback`
 
-Launching or resuming a campaign also dispatches immediately. On the Pro plan you can make the cron more frequent.
+**Google (Gmail)**
+1. In Google Cloud Console, create a project and enable the **Gmail API**.
+2. Set up the **OAuth consent screen**:
+   - If Waresport uses Google Workspace, choose **Internal**. Only `@waresport.com` accounts can connect, and Google requires no app verification.
+   - With **External**, the Gmail scopes need Google's verification before people outside the test-user list can connect.
+3. Under **Credentials**, create an **OAuth client ID** of type Web application and add the redirect URI above.
+4. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+
+Scopes requested: `openid email profile gmail.send gmail.readonly`.
+
+**Microsoft (Outlook / Microsoft 365)**
+1. In the Azure portal, go to **App registrations → New registration**.
+   - Supported accounts: your organization only, or any organization.
+   - Add the redirect URI above as type **Web**.
+2. Under **Certificates & secrets**, create a client secret.
+3. Under **API permissions**, add Microsoft Graph delegated permissions: `Mail.ReadWrite`, `Mail.Send`, `User.Read`, `offline_access`.
+4. Set `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, and `MICROSOFT_TENANT_ID` (your tenant ID, or `common`).
+
+Each rep then clicks **Continue with Google / Microsoft** on the login page, or **Settings → Connected inboxes → Connect**.
+
+## AI (OpenAI)
+
+Set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`, default `gpt-4.1-mini`). Until it's set:
+- replies are classified by built-in rules
+- suggested replies come from templates
+- the AI writer and personalized openers are turned off
+
+Everything else works, and the AI takes over automatically once the key is added.
+
+## Deploying to Vercel
+
+1. Import the repo into Vercel and add a Postgres database (**Storage → Neon**). This sets `DATABASE_URL`.
+2. Add the environment variables from `.env.example`. Set `APP_URL` to your production URL; it must be public for open tracking and webhooks to work.
+3. Deploy. Database migrations run automatically (`vercel-build`).
+4. **Turn on the scheduler.** It sends follow-ups at their due time, scans inboxes and paces calls.
+   - On **Vercel Hobby**, Vercel's own cron runs only once a day, so use the included GitHub Action (`.github/workflows/outreach-cron.yml`), which runs every 5 minutes.
+   - Add two repository secrets: `APP_URL` and `CRON_SECRET`. The Action only runs from the default branch, so merge to `main`.
+   - On **Vercel Pro**, you can instead change `vercel.json` to `*/5 * * * *`.
+   - While anyone has the app open, it also scans inboxes and sends due emails about once a minute.
 
 ## Hosting on your own server later
 
-Nothing in the app is Vercel-specific:
-
 ```bash
-npm ci && npm run db:migrate && npm run build && npm start      # behind nginx/Caddy with HTTPS
+npm ci && npm run db:migrate && npm run build && npm start     # behind nginx/Caddy with HTTPS
+*/5 * * * * curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://your-domain/api/cron/dispatch
 ```
 
-Then have any scheduler call the dispatcher. It's safe to run as often as you like, and every 5 minutes works well:
+Update the OAuth redirect URIs, plus any Cal.com or Calendly webhooks, to the new domain.
 
-```cron
-*/5 * * * * curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://your-domain/api/cron/dispatch > /dev/null
-```
+## Integrations at a glance
 
-Point `DATABASE_URL` at your Postgres and set `APP_URL` to your domain. If you moved the database, re-connect Calendly and update the Cal.com webhook URL.
-
-## Integrations
-
-| Service | What for | Where to configure |
+| Service | Purpose | Config |
 |---|---|---|
-| Bland.ai | AI phone calls | `BLAND_AI_API_KEY`. Caller IDs go in Settings → Phone numbers |
-| Resend | All email | Settings → Company (or `RESEND_API_KEY` / `EMAIL_FROM`); verify your sending domain in Resend |
-| Cal.com | Demo bookings (free webhooks) | Settings → My demo booking link → Cal.com: copy the webhook URL + secret into Cal.com → Settings → Developer → Webhooks |
-| Calendly | Demo bookings (paid plan for webhooks) | Settings → My demo booking link → Calendly: paste a personal access token |
-| OpenAI | AI script/email writer | `OPENAI_API_KEY` (optional `OPENAI_MODEL`) |
+| Google / Microsoft | Sign-in, sending from reps' inboxes, reply scanning | `GOOGLE_*`, `MICROSOFT_*` |
+| OpenAI | Reply classification, suggested replies, personalized openers, script/email writer | `OPENAI_API_KEY` |
+| Bland.ai | AI phone calls | `BLAND_AI_API_KEY`, caller IDs in Settings |
+| Resend | System emails (invites, password resets); fallback sender for reps without a connected inbox | Settings → Company, or `RESEND_API_KEY` |
+| Cal.com / Calendly | Track booked demos | Settings → My demo booking link |
 | SerpAPI | Club search | `SERP_API_KEY` |
 
-Admins can see which integrations are configured under Settings → Integration status.
-
-## How the automation flows
-
-1. A campaign launches, and contacts join its queue.
-2. The dispatcher schedules calls (or cold emails) within the daily limit and calling hours.
-3. When a call ends, Bland sends a webhook (`/api/webhooks/bland`). Each call is processed **exactly once**:
-   - **Wants a demo** → the booking-link email is sent. If no email was captured, the contact appears under Demos → Needs follow-up.
-   - **Interested / callback** → the post-call email sequence starts. Callbacks are also flagged for the rep.
-   - **No answer / voicemail** → a retry is scheduled for the next business day. Once retries run out, the post-call sequence starts.
-   - **Not interested / do not call / wrong number** → the contact is closed out and skipped in future campaigns.
-4. The prospect books through Cal.com or Calendly, and the booking webhook fires:
-   - the demo is recorded
-   - pending calls and nurture emails are cancelled
-   - 24-hour and 1-hour reminders and the post-demo follow-ups are queued
-   - reschedules and cancellations update everything automatically
+Admins can see what's configured under **Settings → Integration status**.
 
 ## Notes and limits
 
-- Pausing a campaign asks Bland to stop calls already scheduled for later that day. If Bland refuses for a particular call, the app tells you it may still go out.
-- Emails more than ~2 days out stay queued in the app and are handed to Resend by the daily job. That keeps them inside Resend's scheduling window.
-- Every email includes an unsubscribe link, and one-click unsubscribe is supported. Unsubscribed contacts are never emailed again.
+- **Opens.** Open rates rely on a tracking pixel. Apple Mail Privacy Protection and some corporate filters inflate or hide opens, so treat open rate as a trend and reply rate as the truth. Open tracking can be turned off under Settings → Outreach rules.
+- **Sending limits.** Each inbox is capped at a configurable number of emails per day (default 150) to protect deliverability.
+- **Pausing call campaigns.** Pausing asks Bland to stop calls already queued for later that day. If Bland refuses a call, the app tells you it may still go out.

@@ -3,7 +3,10 @@ import {
   pgTable, uuid, text, timestamp, boolean, integer, real, jsonb, index, uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-export type Role = "admin" | "rep";
+export type Role = "admin" | "rep" | "intern";
+export type MailProvider = "google" | "microsoft";
+export type ReplyIntent = "positive" | "needs-info" | "not-interested" | "negative" | "out-of-office" | "bounce" | "other";
+export type DealStage = "positive" | "demo-booked" | "demo-held" | "proposal" | "won" | "lost";
 export type BookingProvider = "link" | "calcom" | "calendly";
 export type CampaignChannel = "call" | "email";
 export type CampaignStatus = "draft" | "active" | "paused" | "completed";
@@ -71,6 +74,9 @@ export const orgSettings = pgTable("org_settings", {
   fromEmail: text("from_email"),
   resendApiKeyEnc: text("resend_api_key_enc"),
   mailingAddress: text("mailing_address"),
+  dedupWindowDays: integer("dedup_window_days").notNull().default(30),
+  mailboxDailyLimit: integer("mailbox_daily_limit").notNull().default(150),
+  trackOpens: boolean("track_opens").notNull().default(true),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -100,6 +106,7 @@ export const contacts = pgTable("contacts", {
   reviews: integer("reviews"),
   stage: text("stage").notNull().default("new"),
   emailOptOut: boolean("email_opt_out").notNull().default(false),
+  emailBounced: boolean("email_bounced").notNull().default(false),
   needsFollowUp: text("needs_follow_up"),
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -125,6 +132,8 @@ export const campaigns = pgTable("campaigns", {
   maxRetries: integer("max_retries").notNull().default(2),
   emailsEnabled: boolean("emails_enabled").notNull().default(true),
   emailTemplates: jsonb("email_templates").$type<EmailTemplates>().notNull(),
+  mailboxId: uuid("mailbox_id").references(() => mailboxes.id, { onDelete: "set null" }),
+  aiPersonalize: boolean("ai_personalize").notNull().default(false),
   status: text("status").$type<CampaignStatus>().notNull().default("draft"),
   launchedAt: timestamp("launched_at", { withTimezone: true }),
   createdAt: createdAt(),
@@ -204,13 +213,115 @@ export const emails = pgTable("emails", {
   sendAt: timestamp("send_at", { withTimezone: true }).notNull(),
   status: text("status").$type<"pending" | "scheduled" | "sent" | "failed" | "cancelled">().notNull().default("pending"),
   resendId: text("resend_id"),
+  mailboxId: uuid("mailbox_id").references(() => mailboxes.id, { onDelete: "set null" }),
+  providerMessageId: text("provider_message_id"),
+  threadId: text("thread_id"),
+  messageIdHeader: text("message_id_header"),
+  subjectTemplate: text("subject_template"),
+  openCount: integer("open_count").notNull().default(0),
+  firstOpenedAt: timestamp("first_opened_at", { withTimezone: true }),
+  lastOpenedAt: timestamp("last_opened_at", { withTimezone: true }),
+  clickCount: integer("click_count").notNull().default(0),
+  bouncedAt: timestamp("bounced_at", { withTimezone: true }),
+  repliedAt: timestamp("replied_at", { withTimezone: true }),
   error: text("error"),
   sentAt: timestamp("sent_at", { withTimezone: true }),
   createdAt: createdAt(),
 }, (t) => [
   index("emails_status_send_idx").on(t.status, t.sendAt),
   index("emails_contact_idx").on(t.contactId),
+  index("emails_thread_idx").on(t.mailboxId, t.threadId),
+  index("emails_to_idx").on(t.toEmail),
 ]);
+
+export const mailboxes = pgTable("mailboxes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  provider: text("provider").$type<MailProvider>().notNull(),
+  email: text("email").notNull(),
+  displayName: text("display_name"),
+  accessTokenEnc: text("access_token_enc"),
+  refreshTokenEnc: text("refresh_token_enc"),
+  tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }),
+  status: text("status").$type<"active" | "error" | "disconnected">().notNull().default("active"),
+  lastError: text("last_error"),
+  lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
+  syncCursor: timestamp("sync_cursor", { withTimezone: true }),
+  sentCursor: timestamp("sent_cursor", { withTimezone: true }),
+  createdAt: createdAt(),
+}, (t) => [
+  uniqueIndex("mailboxes_provider_email_uq").on(t.provider, t.email),
+  index("mailboxes_user_idx").on(t.userId),
+]);
+
+export const inboundMessages = pgTable("inbound_messages", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  mailboxId: uuid("mailbox_id").notNull().references(() => mailboxes.id, { onDelete: "cascade" }),
+  ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "set null" }),
+  emailId: uuid("email_id").references(() => emails.id, { onDelete: "set null" }),
+  campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "set null" }),
+  providerMessageId: text("provider_message_id").notNull(),
+  threadId: text("thread_id"),
+  messageIdHeader: text("message_id_header"),
+  fromEmail: text("from_email").notNull(),
+  fromName: text("from_name"),
+  subject: text("subject").notNull().default(""),
+  snippet: text("snippet").notNull().default(""),
+  bodyText: text("body_text").notNull().default(""),
+  receivedAt: timestamp("received_at", { withTimezone: true }).notNull(),
+  intent: text("intent").$type<ReplyIntent>(),
+  intentSource: text("intent_source").$type<"ai" | "rules" | "manual">(),
+  confidence: real("confidence"),
+  aiSummary: text("ai_summary"),
+  suggestedReply: text("suggested_reply"),
+  suggestedReplySource: text("suggested_reply_source").$type<"ai" | "template">(),
+  status: text("status").$type<"new" | "replied" | "archived" | "snoozed">().notNull().default("new"),
+  snoozedUntil: timestamp("snoozed_until", { withTimezone: true }),
+  handledAt: timestamp("handled_at", { withTimezone: true }),
+  createdAt: createdAt(),
+}, (t) => [
+  uniqueIndex("inbound_mailbox_msg_uq").on(t.mailboxId, t.providerMessageId),
+  index("inbound_owner_status_idx").on(t.ownerId, t.status),
+  index("inbound_received_idx").on(t.receivedAt),
+]);
+
+export const emailEvents = pgTable("email_events", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  emailId: uuid("email_id").notNull().references(() => emails.id, { onDelete: "cascade" }),
+  contactId: uuid("contact_id").references(() => contacts.id, { onDelete: "cascade" }),
+  type: text("type").$type<"open" | "click">().notNull(),
+  url: text("url"),
+  createdAt: createdAt(),
+}, (t) => [index("email_events_contact_idx").on(t.contactId, t.createdAt)]);
+
+export const deals = pgTable("deals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  contactId: uuid("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "set null" }),
+  stage: text("stage").$type<DealStage>().notNull().default("positive"),
+  amount: integer("amount"),
+  recurring: boolean("recurring").notNull().default(false),
+  source: text("source").$type<"reply" | "call" | "booking" | "manual">().notNull().default("manual"),
+  notes: text("notes").notNull().default(""),
+  stageChangedAt: timestamp("stage_changed_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: createdAt(),
+}, (t) => [
+  uniqueIndex("deals_contact_uq").on(t.contactId),
+  index("deals_owner_idx").on(t.ownerId),
+]);
+
+export const dedupBlocks = pgTable("dedup_blocks", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  contactId: uuid("contact_id").notNull().references(() => contacts.id, { onDelete: "cascade" }),
+  campaignId: uuid("campaign_id").references(() => campaigns.id, { onDelete: "cascade" }),
+  blockedUserId: uuid("blocked_user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  priorUserId: uuid("prior_user_id").references(() => users.id, { onDelete: "set null" }),
+  priorContactAt: timestamp("prior_contact_at", { withTimezone: true }),
+  channel: text("channel").$type<"email" | "call">().notNull(),
+  createdAt: createdAt(),
+}, (t) => [uniqueIndex("dedup_campaign_contact_uq").on(t.campaignId, t.contactId)]);
 
 export type User = typeof users.$inferSelect;
 export type Contact = typeof contacts.$inferSelect;
@@ -219,3 +330,6 @@ export type CampaignContact = typeof campaignContacts.$inferSelect;
 export type Call = typeof calls.$inferSelect;
 export type Booking = typeof bookings.$inferSelect;
 export type Email = typeof emails.$inferSelect;
+export type Mailbox = typeof mailboxes.$inferSelect;
+export type InboundMessage = typeof inboundMessages.$inferSelect;
+export type Deal = typeof deals.$inferSelect;

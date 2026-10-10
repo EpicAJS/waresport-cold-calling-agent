@@ -6,6 +6,9 @@ import { flushEmails } from "@/lib/email";
 import { getOrgSettings } from "@/lib/settings";
 import { appUrl, isPublicUrl } from "@/lib/env";
 import { businessDaysLater, contactTimeZone, isWeekday, localDayBounds, windowOnDay } from "@/lib/time";
+import { priorTeammateContact, recordDedupBlock } from "@/lib/dedup";
+import { syncMailboxes } from "@/lib/inbox-sync";
+import { markDemosHeld, wakeSnoozed } from "@/lib/background";
 
 const MIN_SPACING_MS = 2 * 60_000;
 const BLOCKED_STAGES = ["do-not-call", "wrong-number", "not-interested", "demo-requested", "demo-scheduled"];
@@ -48,6 +51,7 @@ async function* plan(c: Campaign, now: Date, usedToday: number, lastSlot: Date |
 
   const spacing = spacingFor(c, now);
   const cursors = new Map<string, number>();
+  const { dedupWindowDays } = await getOrgSettings();
   let used = 0;
 
   for (const cand of candidates) {
@@ -57,6 +61,14 @@ async function* plan(c: Campaign, now: Date, usedToday: number, lastSlot: Date |
       await db.update(campaignContacts).set({ status: "skipped", lastOutcome: requireEmail ? "no-email" : "not-callable" })
         .where(eq(campaignContacts.id, cand.cc.id));
       continue;
+    }
+    if (cand.cc.attempts === 0) {
+      const prior = await priorTeammateContact(contact, c.ownerId, dedupWindowDays);
+      if (prior) {
+        await recordDedupBlock({ contactId: contact.id, campaignId: c.id, blockedUserId: c.ownerId, prior });
+        await db.update(campaignContacts).set({ status: "skipped", lastOutcome: "dedup-blocked" }).where(eq(campaignContacts.id, cand.cc.id));
+        continue;
+      }
     }
     const tz = contactTimeZone(contact, c.timezone);
     if (!isWeekday(now, tz)) continue;
@@ -196,7 +208,10 @@ export async function cancelFutureCalls(campaignId: string) {
 /** One full pass of background work. Safe to run as often as every minute or as rarely as once a day. */
 export async function runScheduledWork(budgetMs = 50_000) {
   const deadline = Date.now() + budgetMs;
-  const synced = await syncStaleCalls({ deadline });
+  const synced = await syncStaleCalls({ deadline: Date.now() + budgetMs * 0.2 });
+  const inboxes = await syncMailboxes({ staleMs: 60_000, deadline: Date.now() + budgetMs * 0.4 });
+  const woke = await wakeSnoozed();
+  await markDemosHeld();
 
   const active = await db.select({ id: campaigns.id }).from(campaigns).where(eq(campaigns.status, "active"));
   let dispatched = 0;
@@ -205,5 +220,5 @@ export async function runScheduledWork(budgetMs = 50_000) {
     dispatched += await dispatchCampaign(c.id, deadline);
   }
   const emailResult = await flushEmails({ deadline, limit: 200 });
-  return { synced, dispatched, emails: emailResult };
+  return { synced, inboxes, woke, dispatched, emails: emailResult };
 }

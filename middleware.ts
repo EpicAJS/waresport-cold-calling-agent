@@ -8,6 +8,8 @@ const PUBLIC_PREFIXES = [
   "/reset/",
   "/unsubscribe",
   "/api/auth/",
+  "/api/oauth/",
+  "/api/t/",
   "/api/webhooks/",
   "/api/cron/",
   "/api/unsubscribe",

@@ -97,7 +97,7 @@ export default function DemosPage() {
             <p className="text-xs text-gray-400">Reminders go out 24h and 1h before, and follow-ups after the demo{scheduling.email ? ` to ${scheduling.email}` : " (no email on file, so no emails will be sent)"}.</p>
             {error && <p className="text-xs text-red-600">{error}</p>}
             <div className="flex gap-2">
-              <button onClick={schedule} disabled={!when} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">Save demo</button>
+              <button onClick={schedule} disabled={!when} className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">Save demo</button>
               <button onClick={() => setScheduling(null)} className="px-4 py-2 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50">Cancel</button>
             </div>
           </div>

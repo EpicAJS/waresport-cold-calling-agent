@@ -12,6 +12,8 @@ import CallList, { type CallRow } from "@/components/call-list";
 import EmailList, { type EmailRow } from "@/components/email-list";
 import ScriptEditor from "@/components/script-editor";
 import EmailTemplatesEditor from "@/components/email-templates-editor";
+import SenderSettings from "@/components/sender-settings";
+import SequenceView from "@/components/sequence-view";
 
 type Member = {
   id: string; clubName: string; phone: string; email: string | null; city: string; state: string; stage: string;
@@ -21,7 +23,9 @@ type Member = {
 type Campaign = {
   id: string; name: string; description: string; channel: "call" | "email"; status: string; script: string; voiceId: string;
   fromNumber: string | null; maxPerDay: number; windowStart: string; windowEnd: string; timezone: string; maxRetries: number;
-  emailsEnabled: boolean; emailTemplates: EmailTemplates; ownerName: string;
+  emailsEnabled: boolean; emailTemplates: EmailTemplates; ownerName: string; ownerId: string;
+  mailboxId: string | null; aiPersonalize: boolean;
+  steps: Array<{ kind: string; sent: number; queued: number; opened: number; replied: number; bounced: number }>;
   contactCount: number; remaining: number; callsMade: number; callsQueued: number; answered: number;
   demosRequested: number; demosScheduled: number; emailsSent: number; contacts: Member[];
 };
@@ -58,7 +62,7 @@ export default function CampaignDetailPage() {
     setDraft({
       name: c.name, description: c.description, script: c.script, voiceId: c.voiceId, maxPerDay: c.maxPerDay,
       windowStart: c.windowStart, windowEnd: c.windowEnd, timezone: c.timezone, maxRetries: c.maxRetries,
-      emailsEnabled: c.emailsEnabled, emailTemplates: c.emailTemplates,
+      emailsEnabled: c.emailsEnabled, emailTemplates: c.emailTemplates, mailboxId: c.mailboxId, aiPersonalize: c.aiPersonalize,
     });
     const [callsRes, emailsRes] = await Promise.all([
       fetch(`/api/calls?campaign_id=${id}`), fetch(`/api/emails?campaign_id=${id}`),
@@ -165,7 +169,7 @@ export default function CampaignDetailPage() {
             </button>
           )}
           {campaign.status === "draft" && (
-            <button onClick={launch} disabled={busy} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium disabled:opacity-50">
+            <button onClick={launch} disabled={busy} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-green-600 text-white hover:opacity-90 font-medium disabled:opacity-50">
               <Play className="w-4 h-4" />Launch
             </button>
           )}
@@ -199,6 +203,11 @@ export default function CampaignDetailPage() {
           </div>
         ))}
       </div>
+
+      {(campaign.channel === "email" || campaign.emailsEnabled) && (
+        <SequenceView channel={campaign.channel} templates={campaign.emailTemplates} steps={campaign.steps} aiPersonalize={campaign.aiPersonalize}
+          enrolled={campaign.contactCount} status={campaign.status} />
+      )}
 
       <div className="flex gap-1 border-b border-gray-200">
         {([
@@ -238,7 +247,7 @@ export default function CampaignDetailPage() {
               <div className="flex gap-2">
                 <button disabled={!picked.size || busy}
                   onClick={async () => { if (await patch({ contactIds: Array.from(picked) }, `Added ${picked.size} contact(s).`)) { setPicked(new Set()); setAdding(false); } }}
-                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">
+                  className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
                   Add {picked.size || ""}
                 </button>
                 <button onClick={() => { setAdding(false); setPicked(new Set()); }} className="px-4 py-2 border border-gray-200 text-gray-600 text-sm rounded-lg hover:bg-gray-50">Cancel</button>
@@ -351,6 +360,12 @@ export default function CampaignDetailPage() {
                 </label>
               )}
             </div>
+            {(campaign.channel === "email" || draft.emailsEnabled) && (
+              <div className="mb-3">
+                <SenderSettings ownerId={campaign.ownerId} mailboxId={draft.mailboxId ?? null} onMailbox={(v) => setDraft({ ...draft, mailboxId: v })}
+                  aiPersonalize={draft.aiPersonalize ?? false} onAiPersonalize={(v) => setDraft({ ...draft, aiPersonalize: v })} channel={campaign.channel} />
+              </div>
+            )}
             {draft.emailTemplates && (
               <EmailTemplatesEditor value={draft.emailTemplates} onChange={(t) => setDraft({ ...draft, emailTemplates: t })} channel={campaign.channel} brief={campaign.description} />
             )}
@@ -358,7 +373,7 @@ export default function CampaignDetailPage() {
           </div>
 
           <button onClick={() => patch(draft, "Campaign saved.")} disabled={busy}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90 disabled:opacity-50">
             <Save className="w-4 h-4" />Save changes
           </button>
         </div>

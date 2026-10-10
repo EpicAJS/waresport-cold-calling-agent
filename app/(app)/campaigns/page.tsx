@@ -77,7 +77,7 @@ export default function CampaignsPage() {
           <button onClick={load} className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
             <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
           </button>
-          <Link href="/campaigns/new" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+          <Link href="/campaigns/new" className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90">
             <Plus className="w-4 h-4" />New Campaign
           </Link>
         </div>
@@ -95,7 +95,7 @@ export default function CampaignsPage() {
         <div className="text-center py-20 text-gray-400">
           <p className="text-sm font-medium">No campaigns yet.</p>
           <p className="text-xs mt-1">Create one to start calling or emailing.</p>
-          <Link href="/campaigns/new" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700">
+          <Link href="/campaigns/new" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:opacity-90">
             <Plus className="w-4 h-4" />New Campaign
           </Link>
         </div>
@@ -157,7 +157,7 @@ export default function CampaignsPage() {
                       </button>
                     )}
                     {c.status === "draft" && (
-                      <button onClick={() => launch(c.id)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium">
+                      <button onClick={() => launch(c.id)} className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-green-600 text-white hover:opacity-90 font-medium">
                         <Play className="w-4 h-4" />Launch
                       </button>
                     )}
@@ -166,7 +166,7 @@ export default function CampaignsPage() {
                     </Link>
                     {confirmDelete === c.id ? (
                       <div className="flex gap-1">
-                        <button onClick={() => deleteCampaign(c.id)} className="flex-1 px-2 py-2 text-xs rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium">Confirm</button>
+                        <button onClick={() => deleteCampaign(c.id)} className="flex-1 px-2 py-2 text-xs rounded-lg bg-red-600 text-white hover:opacity-90 font-medium">Confirm</button>
                         <button onClick={() => setConfirmDelete(null)} className="flex-1 px-2 py-2 text-xs rounded-lg border border-gray-200 text-gray-500 hover:bg-gray-50">Cancel</button>
                       </div>
                     ) : (

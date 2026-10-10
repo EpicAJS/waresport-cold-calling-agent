@@ -6,11 +6,11 @@ import { authed } from "@/lib/auth";
 export const PATCH = authed(async (req, { params }, user) => {
   const body = await req.json().catch(() => ({}));
   const patch: Partial<typeof users.$inferInsert> = {};
-  if (body.role === "admin" || body.role === "rep") patch.role = body.role;
+  if (body.role === "admin" || body.role === "rep" || body.role === "intern") patch.role = body.role;
   if (typeof body.disabled === "boolean") patch.disabled = body.disabled;
   if (!Object.keys(patch).length) return NextResponse.json({ error: "Nothing to update." }, { status: 400 });
 
-  const demoting = patch.role === "rep" || patch.disabled === true;
+  const demoting = (patch.role !== undefined && patch.role !== "admin") || patch.disabled === true;
   if (demoting) {
     const [{ admins }] = await db.select({ admins: sql<number>`count(*)::int` }).from(users)
       .where(and(eq(users.role, "admin"), eq(users.disabled, false), ne(users.id, params.id)));

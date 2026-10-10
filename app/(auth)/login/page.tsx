@@ -5,6 +5,7 @@ import { sql } from "drizzle-orm";
 import { db, users } from "@/lib/db";
 import { getSessionUser } from "@/lib/auth";
 import AuthForm from "@/components/auth-form";
+import OAuthButtons from "@/components/oauth-buttons";
 
 export const dynamic = "force-dynamic";
 
@@ -16,8 +17,9 @@ export default async function LoginPage() {
   return (
     <Suspense>
       <AuthForm
+        header={<OAuthButtons />}
         title="Sign in"
-        subtitle="Waresport Cold Calling Agent"
+        subtitle="Use your work Google or Microsoft account, or email"
         endpoint="/api/auth/login"
         submitLabel="Sign in"
         fields={[

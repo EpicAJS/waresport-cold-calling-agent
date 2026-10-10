@@ -1,279 +1,240 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend,
-} from "recharts";
-import { TrendingUp, Phone, Calendar, Clock, RefreshCw } from "lucide-react";
-import { NOT_ANSWERED, OUTCOME_HEX, OUTCOME_LABEL } from "@/lib/labels";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ThumbsUp, ThumbsDown, MailX, Clock, Reply, ArrowUpDown, Phone, Mail } from "lucide-react";
+import { Card, SectionHeader, StatCard, RateBar, StatusChip, PeriodSelect, periodRangeLabel, Empty } from "@/components/kit";
+import { useThemeVars } from "@/components/use-theme-vars";
+import { avatarStyle, initials, pct, INTENT_LABEL, ROLE_LABEL } from "@/lib/ui";
+import { cn } from "@/lib/utils";
+import { prettySubject } from "@/lib/labels";
 
-const OUTCOME_LABELS = OUTCOME_LABEL;
+type Data = {
+  cards: { positive: number; positiveDelta: number; negative: number; bounced: number; noResponse: number; emailed: number };
+  subjects: Array<{ subject: string; sends: number; opened: number; replied: number; bounced: number }>;
+  funnel: { sent: number; delivered: number; opened: number; replied: number; positive: number };
+  reps: Array<{ id: string; name: string; email: string; role: string; sent: number; opened: number; replied: number; positive: number; negative: number; bounced: number; calls: number; inboxes: number }>;
+  series: Array<{ day: string; sent: number; opened: number; replied: number; positive: number }>;
+  intents: Array<{ intent: string; n: number }>;
+  calls: { calls: number; answered: number; demos: number };
+  campaigns: Array<{ id: string; name: string; channel: string; status: string; owner_name: string; contacts: number; emailed: number; opened: number; replied: number; positive: number; calls: number; answered: number; demos: number }>;
+};
 
-type AnyCall = { id: string; status: string; outcome: string; duration: number; campaignId: string; campaignName: string; scheduledFor: string; endedAt: string | null };
-type Campaign = { id: string; name: string; demosScheduled: number };
+const SERIES = [
+  { key: "sent", label: "Sent", color: "series-1" },
+  { key: "opened", label: "Opened", color: "series-2" },
+  { key: "replied", label: "Replied", color: "series-3" },
+  { key: "positive", label: "Positive", color: "series-4" },
+] as const;
 
-function fmt(s: number) {
-  if (!s) return "—";
-  return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, "0")}`;
-}
-
-function buildStats(calls: AnyCall[], campaigns: Campaign[]) {
-  const total = calls.length;
-  const answered = calls.filter((c) => !NOT_ANSWERED.includes(c.outcome)).length;
-  const scheduledDemos = campaigns.reduce((a, c) => a + c.demosScheduled, 0);
-  const demos = calls.filter((c) => c.outcome === "demo-booked").length;
-  const pickupRate = total > 0 ? Math.round((answered / total) * 100) : 0;
-  const demoRate = answered > 0 ? Math.round((demos / answered) * 100) : 0;
-  const totalDur = calls.filter((c) => c.duration > 0).reduce((a, c) => a + c.duration, 0);
-  const avgDur = answered > 0 ? Math.round(totalDur / answered) : 0;
-
-  const outcomeCounts: Record<string, number> = {};
-  calls.forEach((c) => { outcomeCounts[c.outcome] = (outcomeCounts[c.outcome] ?? 0) + 1; });
-
-  const pie = Object.entries(outcomeCounts).map(([k, v]) => ({
-    name: OUTCOME_LABELS[k] ?? k,
-    value: v,
-    color: OUTCOME_HEX[k] ?? "#9ca3af",
-  }));
-
-  const funnelData = [
-    { name: "Calls Made", value: total, fill: "#3b82f6" },
-    { name: "Answered", value: answered, fill: "#6366f1" },
-    { name: "Engaged (>30s)", value: calls.filter((c) => c.duration > 30).length, fill: "#8b5cf6" },
-    { name: "Interested", value: calls.filter((c) => ["interested", "callback", "demo-booked"].includes(c.outcome)).length, fill: "#a855f7" },
-    { name: "Wants Demo", value: demos, fill: "#f59e0b" },
-    { name: "Demo Scheduled", value: scheduledDemos, fill: "#22c55e" },
-  ];
-
-  const byCampaign = Object.values(
-    calls.reduce((acc, c) => {
-      if (!acc[c.campaignId]) acc[c.campaignId] = { name: c.campaignName, calls: 0, demos: 0 };
-      acc[c.campaignId].calls++;
-      if (c.outcome === "demo-booked") acc[c.campaignId].demos++;
-      return acc;
-    }, {} as Record<string, { name: string; calls: number; demos: number }>)
-  ).map((c) => ({ ...c, rate: c.calls > 0 ? Math.round((c.demos / c.calls) * 100) : 0 }));
-
-  const avgByOutcome = Object.entries(
-    calls.filter((c) => c.duration > 0).reduce((acc, c) => {
-      if (!acc[c.outcome]) acc[c.outcome] = { total: 0, count: 0 };
-      acc[c.outcome].total += c.duration;
-      acc[c.outcome].count++;
-      return acc;
-    }, {} as Record<string, { total: number; count: number }>)
-  ).map(([k, v]) => ({ outcome: OUTCOME_LABELS[k] ?? k, avg: Math.round(v.total / v.count) }))
-    .sort((a, b) => b.avg - a.avg);
-
-  const dailyData = Object.entries(
-    calls.reduce((acc, c) => {
-      const d = new Date(c.endedAt ?? c.scheduledFor);
-      const date = d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      if (!acc[date]) acc[date] = { t: new Date(d.toDateString()).getTime(), calls: 0, pickups: 0, demos: 0 };
-      acc[date].calls++;
-      if (!NOT_ANSWERED.includes(c.outcome)) acc[date].pickups++;
-      if (c.outcome === "demo-booked") acc[date].demos++;
-      return acc;
-    }, {} as Record<string, { t: number; calls: number; pickups: number; demos: number }>)
-  )
-    .sort(([, a], [, b]) => a.t - b.t)
-    .slice(-30)
-    .map(([date, { calls, pickups, demos }]) => ({ date, calls, pickups, demos }));
-
-  return { total, answered, demos, pickupRate, demoRate, avgDur, pie, funnelData, byCampaign, avgByOutcome, dailyData };
-}
+type SubjectSort = "sends" | "open" | "reply" | "bounce";
 
 export default function AnalyticsPage() {
-  const [calls, setCalls] = useState<AnyCall[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [isLive, setIsLive] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [days, setDays] = useState(30);
+  const [rep, setRep] = useState("");
+  const [d, setD] = useState<Data | null>(null);
+  const [showTable, setShowTable] = useState(false);
+  const [sort, setSort] = useState<SubjectSort>("sends");
+  const colors = useThemeVars(["series-1", "series-2", "series-3", "series-4", "border", "text-muted", "bg-surface", "text-primary"] as const);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const [res, campRes] = await Promise.all([fetch("/api/calls"), fetch("/api/campaigns")]);
-      const live: AnyCall[] = (await res.json()).filter((c: AnyCall) => c.status !== "scheduled");
-      setCalls(live);
-      setCampaigns(await campRes.json());
-      setIsLive(live.length > 0);
-    } catch {
-      setCalls([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const load = useCallback(async () => {
+    const res = await fetch(`/api/analytics?days=${days}${rep ? `&user=${rep}` : ""}`, { cache: "no-store" });
+    if (res.ok) setD(await res.json());
+  }, [days, rep]);
+  useEffect(() => { load(); }, [load]);
 
-  useEffect(() => { load(); }, []);
+  const subjects = useMemo(() => {
+    const rows = [...(d?.subjects ?? [])].map((s) => ({ ...s, open: pct(s.opened, s.sends), reply: pct(s.replied, s.sends), bounce: pct(s.bounced, s.sends) }));
+    return rows.sort((a, b) => (sort === "sends" ? b.sends - a.sends : b[sort] - a[sort] || b.sends - a.sends));
+  }, [d, sort]);
 
-  const s = buildStats(calls, campaigns);
-
-  const kpis = [
-    { label: "Total Calls", value: String(s.total), sub: "All time", icon: Phone, color: "text-blue-500", bg: "bg-blue-50" },
-    { label: "Pickup Rate", value: `${s.pickupRate}%`, sub: `${s.answered} answered`, icon: TrendingUp, color: "text-green-500", bg: "bg-green-50" },
-    { label: "Demo Rate", value: `${s.demoRate}%`, sub: "answered calls wanting a demo", icon: Calendar, color: "text-purple-500", bg: "bg-purple-50" },
-    { label: "Avg Call Length", value: fmt(s.avgDur), sub: "answered calls only", icon: Clock, color: "text-orange-500", bg: "bg-orange-50" },
-  ];
+  const replyRate = d ? pct(d.funnel.replied, d.funnel.sent) : 0;
+  const totalIntents = d?.intents.reduce((a, i) => a + i.n, 0) ?? 0;
+  const SortHead = ({ k, label }: { k: SubjectSort; label: string }) => (
+    <th className="eyebrow text-left px-4 py-2.5">
+      <button onClick={() => setSort(k)} className={cn("flex items-center gap-1", sort === k && "text-blue-500")}>{label}<ArrowUpDown className="w-3 h-3" /></button>
+    </th>
+  );
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-gray-900">Analytics</h1>
-            {isLive && <span className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium"><span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />Live</span>}
-          </div>
-          <p className="text-gray-500 text-sm mt-1">Performance across all campaigns</p>
+    <div className="p-6 flex flex-col gap-5">
+      <div className="flex items-center gap-3 flex-wrap">
+        <h1 className="text-[15px] font-semibold text-gray-900">Analytics</h1>
+        <span className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-2.5 py-1 tnum">{periodRangeLabel(days)}</span>
+        <div className="ml-auto flex gap-2">
+          <select value={rep} onChange={(e) => setRep(e.target.value)} className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-2.5 py-1">
+            <option value="">Whole team</option>
+            {d?.reps.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+          </select>
+          <PeriodSelect days={days} onChange={setDays} />
         </div>
-        <button onClick={load} className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />Refresh
-        </button>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-4 gap-4">
-        {kpis.map((k) => (
-          <div key={k.label} className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm text-gray-500 font-medium">{k.label}</p>
-              <div className={`w-8 h-8 ${k.bg} rounded-lg flex items-center justify-center`}>
-                <k.icon className={`w-4 h-4 ${k.color}`} />
-              </div>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <StatCard tone="pos" icon={ThumbsUp} label="Positive" value={d?.cards.positive ?? "—"} sub={d ? `${d.cards.positiveDelta >= 0 ? "+" : ""}${d.cards.positiveDelta} vs previous period` : ""} />
+        <StatCard tone="neg" icon={ThumbsDown} label="Negative" value={d?.cards.negative ?? "—"} sub="Not interested / wrong fit" />
+        <StatCard tone="warn" icon={MailX} label="Bounced" value={d?.cards.bounced ?? "—"} sub={d ? `${pct(d.cards.bounced, d.cards.emailed)}% of contacts emailed` : ""} />
+        <StatCard tone="neu" icon={Clock} label="No response" value={d?.cards.noResponse ?? "—"} sub={d ? `of ${d.cards.emailed} contacts emailed` : ""} />
+        <StatCard tone="info" icon={Reply} label="Reply rate" value={d ? `${replyRate}%` : "—"} sub={d ? `${pct(d.funnel.opened, d.funnel.sent)}% open rate` : ""} />
+      </div>
+
+      <div>
+        <SectionHeader title="Email activity" action={
+          <button onClick={() => setShowTable(!showTable)} className="text-[11px] text-blue-500 hover:underline">{showTable ? "Show chart" : "Show table"}</button>
+        } />
+        <Card className="p-4">
+          <div className="flex gap-4 mb-3 flex-wrap">
+            {SERIES.map((s) => (
+              <span key={s.key} className="flex items-center gap-1.5 text-[11px] text-gray-500">
+                <span className="w-3 h-[2px] rounded" style={{ background: colors[s.color] }} />{s.label}
+              </span>
+            ))}
+          </div>
+          {showTable ? (
+            <div className="max-h-[260px] overflow-y-auto">
+              <table className="w-full text-xs">
+                <thead><tr className="text-gray-400 text-left"><th className="py-1.5">Day</th>{SERIES.map((s) => <th key={s.key} className="py-1.5 text-right">{s.label}</th>)}</tr></thead>
+                <tbody>{d?.series.map((r) => (
+                  <tr key={r.day} className="border-t border-gray-200"><td className="py-1.5 text-gray-500">{r.day}</td>{SERIES.map((s) => <td key={s.key} className="py-1.5 text-right tnum text-gray-900">{r[s.key]}</td>)}</tr>
+                ))}</tbody>
+              </table>
             </div>
-            <p className="text-3xl font-bold text-gray-900">{k.value}</p>
-            <p className="text-xs text-gray-400 mt-1">{k.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Funnel + Pie */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Conversion Funnel</h2>
-          <div className="space-y-2">
-            {s.funnelData.map((step) => {
-              const pct = s.funnelData[0].value > 0 ? Math.round((step.value / s.funnelData[0].value) * 100) : 0;
-              return (
-                <div key={step.name}>
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>{step.name}</span>
-                    <span className="font-medium text-gray-700">{step.value} <span className="text-gray-400">({pct}%)</span></span>
-                  </div>
-                  <div className="w-full bg-gray-100 rounded-full h-5 overflow-hidden">
-                    <div className="h-5 rounded-full" style={{ width: `${pct}%`, background: step.fill }} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Outcome Breakdown</h2>
-          <div className="flex items-center gap-4">
-            <ResponsiveContainer width="50%" height={180}>
-              <PieChart>
-                <Pie data={s.pie} cx="50%" cy="50%" innerRadius={45} outerRadius={70} dataKey="value">
-                  {s.pie.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                </Pie>
-                <Tooltip formatter={(v) => [`${v} calls`]} />
-              </PieChart>
+          ) : (
+            <ResponsiveContainer width="100%" height={240}>
+              <LineChart data={d?.series ?? []} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
+                <CartesianGrid stroke={colors.border} strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="day" tick={{ fontSize: 10, fill: colors["text-muted"] }} tickLine={false} axisLine={{ stroke: colors.border }}
+                  tickFormatter={(v: string) => new Date(v + "T12:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })} minTickGap={24} />
+                <YAxis tick={{ fontSize: 10, fill: colors["text-muted"] }} tickLine={false} axisLine={false} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ background: colors["bg-surface"], border: `1px solid ${colors.border}`, borderRadius: 8, fontSize: 12, color: colors["text-primary"] }}
+                  labelFormatter={(v: string) => new Date(v + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                  cursor={{ stroke: colors["text-muted"], strokeWidth: 1 }}
+                />
+                {SERIES.map((s) => (
+                  <Line key={s.key} type="monotone" dataKey={s.key} name={s.label} stroke={colors[s.color]} strokeWidth={2} dot={false}
+                    activeDot={{ r: 4, stroke: colors["bg-surface"], strokeWidth: 2 }} />
+                ))}
+              </LineChart>
             </ResponsiveContainer>
-            <div className="flex-1 space-y-1.5">
-              {s.pie.map((o) => (
-                <div key={o.name} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: o.color }} />
-                    <span className="text-gray-500">{o.name}</span>
-                  </div>
-                  <span className="font-semibold text-gray-700">{o.value}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+          )}
+        </Card>
       </div>
 
-      {/* Daily Chart */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="text-sm font-semibold text-gray-700 mb-4">Daily Call Volume</h2>
-        {s.dailyData.length === 0 ? (
-          <div className="flex items-center justify-center h-[220px] text-gray-300 text-sm">No call data yet</div>
-        ) : (
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={s.dailyData} barGap={4}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-            <XAxis dataKey="date" tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: "#9ca3af" }} axisLine={false} tickLine={false} />
-            <Tooltip />
-            <Bar dataKey="calls" fill="#dbeafe" radius={[4, 4, 0, 0]} name="Total Calls" />
-            <Bar dataKey="pickups" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Pickups" />
-            <Bar dataKey="demos" fill="#22c55e" radius={[4, 4, 0, 0]} name="Demos" />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-          </BarChart>
-        </ResponsiveContainer>
-        )}
-      </div>
-
-      {/* Campaign Table + Avg Duration */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Campaign Performance</h2>
-          {s.byCampaign.length > 0 ? (
+      <div>
+        <SectionHeader title="Subject line performance" tag={subjects.length} />
+        <Card>
+          {subjects.length === 0 ? <Empty>No emails sent in this period.</Empty> : (
             <table className="w-full">
-              <thead>
-                <tr className="text-xs text-gray-400 text-left border-b border-gray-100">
-                  <th className="pb-2 font-medium">Campaign</th>
-                  <th className="pb-2 font-medium text-right">Calls</th>
-                  <th className="pb-2 font-medium text-right">Wants Demo</th>
-                  <th className="pb-2 font-medium text-right">Rate</th>
-                </tr>
-              </thead>
+              <thead><tr className="bg-gray-50 border-b border-gray-200">
+                <th className="eyebrow text-left px-4 py-2.5">Subject</th>
+                <SortHead k="sends" label="Sends" /><SortHead k="open" label="Open rate" /><SortHead k="reply" label="Reply rate" /><SortHead k="bounce" label="Bounced" />
+              </tr></thead>
               <tbody>
-                {s.byCampaign.map((c) => (
-                  <tr key={c.name + c.calls} className="border-b border-gray-50 last:border-0">
-                    <td className="py-2.5 text-sm text-gray-700">{c.name}</td>
-                    <td className="py-2.5 text-sm text-gray-500 text-right">{c.calls}</td>
-                    <td className="py-2.5 text-sm text-green-600 font-medium text-right">{c.demos}</td>
-                    <td className="py-2.5 text-right">
-                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                        c.rate >= 20 ? "bg-green-100 text-green-700" :
-                        c.rate >= 10 ? "bg-yellow-100 text-yellow-700" : "bg-gray-100 text-gray-500"
-                      }`}>{c.rate}%</span>
-                    </td>
+                {subjects.map((s) => (
+                  <tr key={s.subject} className="border-b border-gray-200 last:border-0 hover:bg-gray-50">
+                    <td className="px-4 py-2.5 text-[11px] font-mono text-gray-900 max-w-[420px]">{prettySubject(s.subject)}</td>
+                    <td className="px-4 py-2.5 text-xs tnum text-gray-700">{s.sends}</td>
+                    <td className="px-4 py-2.5 w-[18%]"><RateBar value={s.open} /></td>
+                    <td className="px-4 py-2.5 w-[18%]"><RateBar value={s.reply} tone="pos" /></td>
+                    <td className="px-4 py-2.5 text-xs tnum text-gray-500">{s.bounce}%</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          ) : (
-            <p className="text-sm text-gray-400 text-center py-6">No campaign data yet.</p>
           )}
+        </Card>
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-4 items-start">
+        <div>
+          <SectionHeader title="By rep" />
+          <Card>
+            <table className="w-full">
+              <thead><tr className="bg-gray-50 border-b border-gray-200">
+                {["Rep", "Sent", "Open rate", "Reply rate", "Positive", "Negative", "Bounced", "Calls"].map((h) => <th key={h} className="eyebrow text-left px-3 py-2.5">{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {d?.reps.map((r) => (
+                  <tr key={r.id} className="border-b border-gray-200 last:border-0 hover:bg-gray-50">
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-2">
+                        <span className={cn("w-6 h-6 rounded-full text-[9px] font-semibold flex items-center justify-center", avatarStyle(r.email))}>{initials(r.name)}</span>
+                        <div><p className="text-xs font-medium text-gray-900">{r.name}</p><p className="text-[10px] text-gray-400">{ROLE_LABEL[r.role]}{r.inboxes === 0 ? " · no inbox" : ""}</p></div>
+                      </div>
+                    </td>
+                    <td className="px-3 py-2.5 text-xs tnum text-gray-700">{r.sent}</td>
+                    <td className="px-3 py-2.5 w-[14%]"><RateBar value={pct(r.opened, r.sent)} /></td>
+                    <td className="px-3 py-2.5 w-[14%]"><RateBar value={pct(r.replied, r.sent)} tone="pos" /></td>
+                    <td className="px-3 py-2.5 text-xs tnum text-green-700">{r.positive}</td>
+                    <td className="px-3 py-2.5 text-xs tnum text-red-700">{r.negative}</td>
+                    <td className="px-3 py-2.5 text-xs tnum text-gray-500">{r.bounced}</td>
+                    <td className="px-3 py-2.5 text-xs tnum text-gray-500">{r.calls}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-sm font-semibold text-gray-700 mb-4">Avg Call Duration by Outcome</h2>
-          {s.avgByOutcome.length > 0 ? (
-            <div className="space-y-3">
-              {s.avgByOutcome.map((item) => {
-                const maxSec = s.avgByOutcome[0]?.avg || 1;
-                const pct = Math.round((item.avg / maxSec) * 100);
-                return (
-                  <div key={item.outcome}>
-                    <div className="flex justify-between text-xs text-gray-500 mb-1">
-                      <span>{item.outcome}</span>
-                      <span className="font-medium text-gray-700">{fmt(item.avg)}</span>
-                    </div>
-                    <div className="w-full bg-gray-100 rounded-full h-2">
-                      <div className="h-2 rounded-full bg-blue-500" style={{ width: `${pct}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <p className="text-sm text-gray-400 text-center py-6">No call duration data yet.</p>
-          )}
+        <div className="flex flex-col gap-4">
+          <div>
+            <SectionHeader title="Reply intent" tag={totalIntents} />
+            <Card className="p-4 space-y-2.5">
+              {d && d.intents.length === 0 ? <Empty>No replies yet.</Empty> : d?.intents.map((i) => (
+                <div key={i.intent}>
+                  <div className="flex justify-between text-[11px] mb-1"><span className="text-gray-500">{INTENT_LABEL[i.intent] ?? i.intent}</span><span className="tnum text-gray-900 font-medium">{i.n} <span className="text-gray-400">({pct(i.n, totalIntents)}%)</span></span></div>
+                  <div className="h-[5px] bg-gray-100 rounded-full overflow-hidden"><div className="h-full rounded-full bg-blue-500" style={{ width: `${pct(i.n, totalIntents)}%` }} /></div>
+                </div>
+              ))}
+            </Card>
+          </div>
+          <div>
+            <SectionHeader title="AI calls" />
+            <Card className="grid grid-cols-3">
+              {[{ l: "Calls", v: d?.calls.calls }, { l: "Answered", v: d?.calls.answered }, { l: "Want demo", v: d?.calls.demos }].map((m) => (
+                <div key={m.l} className="p-4 border-r border-gray-200 last:border-0">
+                  <p className="text-xl font-semibold tnum text-gray-900">{m.v ?? "—"}</p>
+                  <p className="eyebrow mt-0.5">{m.l}</p>
+                </div>
+              ))}
+            </Card>
+          </div>
         </div>
+      </div>
+
+      <div>
+        <SectionHeader title="Campaign performance" />
+        <Card>
+          {d && d.campaigns.length === 0 ? <Empty>No campaigns yet.</Empty> : (
+            <table className="w-full">
+              <thead><tr className="bg-gray-50 border-b border-gray-200">
+                {["Campaign", "Contacts", "Open / answer rate", "Reply / demo rate", "Positive", "Status"].map((h) => <th key={h} className="eyebrow text-left px-4 py-2.5">{h}</th>)}
+              </tr></thead>
+              <tbody>
+                {d?.campaigns.map((c) => {
+                  const call = c.channel === "call";
+                  return (
+                    <tr key={c.id} className="border-b border-gray-200 last:border-0 hover:bg-gray-50">
+                      <td className="px-4 py-2.5">
+                        <Link href={`/campaigns/${c.id}`} className="text-xs font-medium text-gray-900 hover:text-blue-500 flex items-center gap-1.5">
+                          {call ? <Phone className="w-3 h-3 text-gray-400" /> : <Mail className="w-3 h-3 text-gray-400" />}{c.name}
+                        </Link>
+                        <p className="text-[11px] text-gray-400">{c.owner_name}</p>
+                      </td>
+                      <td className="px-4 py-2.5 text-xs tnum text-gray-700">{c.contacts}</td>
+                      <td className="px-4 py-2.5 w-[18%]"><RateBar value={call ? pct(c.answered, c.calls) : pct(c.opened, c.emailed)} /></td>
+                      <td className="px-4 py-2.5 w-[18%]"><RateBar value={call ? pct(c.demos, c.answered) : pct(c.replied, c.emailed)} tone="pos" /></td>
+                      <td className="px-4 py-2.5 text-xs tnum text-green-700">{call ? c.demos : c.positive}</td>
+                      <td className="px-4 py-2.5"><StatusChip status={c.status} /></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </Card>
       </div>
     </div>
   );

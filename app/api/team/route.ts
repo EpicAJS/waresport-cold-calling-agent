@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { and, asc, desc, eq, gt, isNull } from "drizzle-orm";
-import { db, invites, users, type Role } from "@/lib/db";
+import { db, invites, mailboxes, users, type Role } from "@/lib/db";
+import { repActivity } from "@/lib/metrics";
 import { authed } from "@/lib/auth";
 import { randomToken, sha256 } from "@/lib/crypto";
 import { appUrl } from "@/lib/env";
@@ -9,7 +10,7 @@ import { getOrgSettings } from "@/lib/settings";
 
 const INVITE_DAYS = 7;
 
-export const GET = authed(async () => {
+export const GET = authed(async (_req, _ctx, user) => {
   const members = await db
     .select({ id: users.id, name: users.name, email: users.email, role: users.role, disabled: users.disabled, createdAt: users.createdAt })
     .from(users)
@@ -19,13 +20,22 @@ export const GET = authed(async () => {
     .from(invites)
     .where(and(isNull(invites.acceptedAt), gt(invites.expiresAt, new Date())))
     .orderBy(desc(invites.createdAt));
-  return NextResponse.json({ members, invites: pending });
+  const activity = await repActivity({ user }, 30);
+  const boxes = await db.select({ userId: mailboxes.userId, email: mailboxes.email, provider: mailboxes.provider, status: mailboxes.status }).from(mailboxes);
+  return NextResponse.json({
+    members: members.map((m) => ({
+      ...m,
+      stats: activity.find((a) => a.id === m.id) ?? null,
+      mailboxes: boxes.filter((b) => b.userId === m.id && b.status !== "disconnected"),
+    })),
+    invites: pending,
+  });
 }, { admin: true });
 
 export const POST = authed(async (req, _ctx, user) => {
   const body = await req.json().catch(() => ({}));
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
-  const role: Role = body.role === "admin" ? "admin" : "rep";
+  const role: Role = body.role === "admin" || body.role === "intern" ? body.role : "rep";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Enter a valid email." }, { status: 400 });
 
   const [existing] = await db.select({ id: users.id }).from(users).where(eq(users.email, email)).limit(1);

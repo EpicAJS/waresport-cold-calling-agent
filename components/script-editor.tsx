@@ -48,7 +48,7 @@ export default function ScriptEditor({ value, onChange, brief }: { value: string
         />
         <div className="flex gap-2">
           <button type="button" onClick={() => generate(false)} disabled={busy || !prompt.trim()}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50">
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-purple-600 text-white rounded-lg hover:opacity-90 disabled:opacity-50">
             {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}Write new script
           </button>
           <button type="button" onClick={() => generate(true)} disabled={busy || !value.trim()}
