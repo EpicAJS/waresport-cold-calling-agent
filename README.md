@@ -105,14 +105,14 @@ Everything else works, and the AI takes over automatically once the key is added
    - On **Vercel Pro**, you can instead change `vercel.json` to `*/5 * * * *`.
    - While anyone has the app open, it also scans inboxes and sends due emails about once a minute.
 
-## Hosting on your own server later
+## Hosting on AWS (or any server)
 
-```bash
-npm ci && npm run db:migrate && npm run build && npm start     # behind nginx/Caddy with HTTPS
-*/5 * * * * curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://your-domain/api/cron/dispatch
-```
+**[deploy/AWS.md](deploy/AWS.md)** walks through going live step by step:
+- an EC2 server running Docker, with automatic HTTPS and the built-in 5-minute scheduler
+- an RDS Postgres database
+- your own domain
 
-Update the OAuth redirect URIs, plus any Cal.com or Calendly webhooks, to the new domain.
+The same `docker compose up -d --build` setup works on any Linux server. To update after a change, run `bash deploy/update.sh` on the server.
 
 ## Integrations at a glance
 
