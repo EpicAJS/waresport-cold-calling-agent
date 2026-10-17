@@ -13,7 +13,7 @@ type Me = {
   bookingUrl: string; calendlyConnected: boolean; calcomWebhookUrl: string; calcomSecret: string;
 };
 type Org = {
-  companyName: string; fromEmail: string; mailingAddress: string; resendKeySet: boolean; resendKeySource: string;
+  companyName: string; fromEmail: string; mailingAddress: string; resendKeySet: boolean; resendKeySource: string; emailProvider: "ses" | "resend" | null; sesConfigured: boolean; sesRegion: string | null;
   integrations: Record<string, boolean>; appUrl: string; isAdmin: boolean;
   dedupWindowDays: number; mailboxDailyLimit: number; trackOpens: boolean;
 };
@@ -146,7 +146,7 @@ export default function SettingsPage() {
     ["Google sign-in & Gmail", org.integrations.google, "GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET"],
     ["Microsoft sign-in & Outlook", org.integrations.microsoft, "MICROSOFT_CLIENT_ID / MICROSOFT_CLIENT_SECRET"],
     ["OpenAI (reply AI, writer)", org.integrations.openai, "OPENAI_API_KEY"],
-    ["System email (Resend)", org.integrations.email, "Company settings below"],
+    [`System email (${org.emailProvider === "ses" ? "Amazon SES" : "Resend"})`, org.integrations.email, org.sesConfigured ? "SES keys set; add a From address below" : "SES_* keys, or Resend in Company settings below"],
     ["Scheduled jobs", org.integrations.cron, "CRON_SECRET"],
     ["Public URL for webhooks", org.integrations.publicUrl, `APP_URL (now ${org.appUrl})`],
   ];
@@ -282,20 +282,27 @@ export default function SettingsPage() {
               <input className={inputCls} value={company.companyName} onChange={(e) => setCompany({ ...company, companyName: e.target.value })} />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">From address (verified in Resend)</label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">From address (on a domain verified in {org.sesConfigured ? "Amazon SES" : "Resend"})</label>
               <input className={inputCls} type="email" placeholder="team@yourcompany.com" value={company.fromEmail} onChange={(e) => setCompany({ ...company, fromEmail: e.target.value })} />
             </div>
             <div className="col-span-2">
               <label className="block text-xs font-medium text-gray-600 mb-1">Mailing address (required in cold email footers by CAN-SPAM)</label>
               <input className={inputCls} placeholder="123 Main St, Austin, TX 78701" value={company.mailingAddress} onChange={(e) => setCompany({ ...company, mailingAddress: e.target.value })} />
             </div>
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Resend API key {org.resendKeySet && <span className="text-green-600 font-normal">· set ({org.resendKeySource === "env" ? "from RESEND_API_KEY" : "saved here"})</span>}
-              </label>
-              <input type="password" className={`${inputCls} font-mono`} placeholder={org.resendKeySet ? "Leave blank to keep the current key" : "re_xxxxxxxxxxxxxxxx"}
-                value={company.resendApiKey} onChange={(e) => setCompany({ ...company, resendApiKey: e.target.value })} />
-            </div>
+            {org.sesConfigured ? (
+              <div className="col-span-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5">
+                Sending through <span className="font-medium text-gray-900">Amazon SES</span> ({org.sesRegion}), set by the SES_* environment variables.
+                Reps whose address is on the same domain as the From address send as themselves.
+              </div>
+            ) : (
+              <div className="col-span-2">
+                <label className="block text-xs font-medium text-gray-600 mb-1">
+                  Resend API key {org.resendKeySet && <span className="text-green-600 font-normal">· set ({org.resendKeySource === "env" ? "from RESEND_API_KEY" : "saved here"})</span>}
+                </label>
+                <input type="password" className={`${inputCls} font-mono`} placeholder={org.resendKeySet ? "Leave blank to keep the current key" : "re_xxxxxxxxxxxxxxxx"}
+                  value={company.resendApiKey} onChange={(e) => setCompany({ ...company, resendApiKey: e.target.value })} />
+              </div>
+            )}
           </div>
           <button onClick={saveCompany} className="px-4 py-2 bg-brand-600 text-white text-sm rounded-lg hover:opacity-90 font-medium">Save company settings</button>
           <div className="border-t border-gray-100 pt-4 flex gap-2">

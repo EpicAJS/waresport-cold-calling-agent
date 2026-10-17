@@ -125,7 +125,7 @@ Then add the integrations you use:
 - `BLAND_AI_API_KEY`
 - `WEBHOOK_SECRET`
 - `SERP_API_KEY`
-- `RESEND_API_KEY`
+- `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY`, `SES_REGION` and `EMAIL_FROM`, for system email through Amazon SES. The README has the SES setup, or use `RESEND_API_KEY` instead.
 
 Save and exit nano with Ctrl+O, Enter, then Ctrl+X.
 

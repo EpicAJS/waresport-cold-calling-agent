@@ -211,7 +211,7 @@ export const emails = pgTable("emails", {
   html: text("html").notNull(),
   text: text("text").notNull(),
   sendAt: timestamp("send_at", { withTimezone: true }).notNull(),
-  status: text("status").$type<"pending" | "scheduled" | "sent" | "failed" | "cancelled">().notNull().default("pending"),
+  status: text("status").$type<"pending" | "sending" | "scheduled" | "sent" | "failed" | "cancelled">().notNull().default("pending"),
   resendId: text("resend_id"),
   mailboxId: uuid("mailbox_id").references(() => mailboxes.id, { onDelete: "set null" }),
   providerMessageId: text("provider_message_id"),

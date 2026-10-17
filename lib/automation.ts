@@ -240,7 +240,7 @@ export async function maybeCompleteCampaign(campaignId: string) {
   const [{ queued }] = await db
     .select({ queued: sql<number>`count(*)::int` })
     .from(emails)
-    .where(and(eq(emails.campaignId, campaignId), inArray(emails.status, ["pending", "scheduled"])));
+    .where(and(eq(emails.campaignId, campaignId), inArray(emails.status, ["pending", "sending", "scheduled"])));
   if (queued > 0) return;
   await db.update(campaigns).set({ status: "completed" }).where(and(eq(campaigns.id, campaignId), eq(campaigns.status, "active")));
 }

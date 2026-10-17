@@ -5,6 +5,7 @@ import { encrypt } from "@/lib/crypto";
 import { getOrgSettings } from "@/lib/settings";
 import { appUrl, isPublicUrl } from "@/lib/env";
 import { providerConfigured } from "@/lib/mail";
+import { relayFor, sesConfig } from "@/lib/relay";
 
 export const GET = authed(async (_req, _ctx, user) => {
   const s = await getOrgSettings();
@@ -14,6 +15,9 @@ export const GET = authed(async (_req, _ctx, user) => {
     mailingAddress: s.mailingAddress,
     resendKeySet: Boolean(s.resendApiKey),
     resendKeySource: s.resendKeySource,
+    emailProvider: relayFor(s)?.provider ?? null,
+    sesConfigured: Boolean(sesConfig()),
+    sesRegion: sesConfig()?.region ?? null,
     dedupWindowDays: s.dedupWindowDays,
     mailboxDailyLimit: s.mailboxDailyLimit,
     trackOpens: s.trackOpens,
@@ -23,7 +27,7 @@ export const GET = authed(async (_req, _ctx, user) => {
       openai: Boolean(process.env.OPENAI_API_KEY),
       google: providerConfigured("google"),
       microsoft: providerConfigured("microsoft"),
-      email: Boolean(s.resendApiKey && s.fromEmail),
+      email: Boolean(relayFor(s)),
       cron: Boolean(process.env.CRON_SECRET),
       publicUrl: isPublicUrl(appUrl()),
     },

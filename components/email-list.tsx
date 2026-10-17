@@ -29,6 +29,7 @@ export function emailDisplayStatus(e: Pick<EmailRow, "status" | "sendAt">) {
 
 const STATUS_STYLE: Record<string, string> = {
   pending: "bg-gray-100 text-gray-600",
+  sending: "bg-blue-100 text-blue-700",
   scheduled: "bg-blue-100 text-blue-700",
   sent: "bg-green-100 text-green-700",
   failed: "bg-red-100 text-red-700",

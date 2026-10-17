@@ -3,6 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { db, campaigns, campaignContacts, users } from "@/lib/db";
 import { authed, canAccess } from "@/lib/auth";
 import { dispatchCampaign } from "@/lib/dispatcher";
+import { relayFor } from "@/lib/relay";
 import { getOrgSettings } from "@/lib/settings";
 import { withDefaults } from "@/lib/templates";
 import { activeMailboxFor } from "@/lib/mail";
@@ -21,7 +22,7 @@ export const POST = authed(async (_req, { params }, user) => {
   const [owner] = await db.select().from(users).where(eq(users.id, campaign.ownerId)).limit(1);
   const org = await getOrgSettings();
   const inbox = await activeMailboxFor(campaign.ownerId, campaign.mailboxId);
-  const emailReady = Boolean(inbox || (org.resendApiKey && org.fromEmail));
+  const emailReady = Boolean(inbox || relayFor(org));
   const usesBookingLink = JSON.stringify(withDefaults(campaign.emailTemplates)).includes("{{booking_link}}");
 
   if (campaign.channel === "call") {

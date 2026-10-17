@@ -94,6 +94,29 @@ Set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`, default `gpt-4.1-mini`). Un
 
 Everything else works, and the AI takes over automatically once the key is added.
 
+## System email: Amazon SES or Resend
+
+Campaign emails go out from each rep's own Gmail or Outlook. A separate "system" sender handles:
+- invites and password resets
+- campaign emails for reps who haven't connected an inbox
+
+Set up **one** of these:
+
+**Amazon SES** (used whenever the `SES_*` variables are set)
+1. In the SES console (same region as `SES_REGION`), go to **Identities → Create identity → Domain**. Add the DNS records it shows, so SES can sign mail for your domain.
+2. Go to **Account dashboard → Request production access**. Until AWS approves it (usually within a day), SES only delivers to addresses you've verified yourself.
+3. In IAM, create a user with only this permission and create an access key for it:
+   ```json
+   { "Version": "2012-10-17", "Statement": [{ "Effect": "Allow", "Action": "ses:SendEmail", "Resource": "*" }] }
+   ```
+4. Set `SES_ACCESS_KEY_ID`, `SES_SECRET_ACCESS_KEY`, `SES_REGION` and `EMAIL_FROM`.
+
+**Resend:** verify your domain at resend.com, then set `RESEND_API_KEY` and `EMAIL_FROM`. You can also enter both under Settings → Company.
+
+With either provider, reps whose address is on the same domain as `EMAIL_FROM` (for example `jane@waresport.com`) send as themselves. Everyone else sends as "Name at Waresport" from the `EMAIL_FROM` address. Replies always go to the rep's own address.
+
+Use **Settings → Company & system email → Send test** to check the setup.
+
 ## Deploying to Vercel
 
 1. Import the repo into Vercel and add a Postgres database (**Storage → Neon**). This sets `DATABASE_URL`.
@@ -121,7 +144,7 @@ The same `docker compose up -d --build` setup works on any Linux server. To upda
 | Google / Microsoft | Sign-in, sending from reps' inboxes, reply scanning | `GOOGLE_*`, `MICROSOFT_*` |
 | OpenAI | Reply classification, suggested replies, personalized openers, script/email writer | `OPENAI_API_KEY` |
 | Bland.ai | AI phone calls | `BLAND_AI_API_KEY`, caller IDs in Settings |
-| Resend | System emails (invites, password resets); fallback sender for reps without a connected inbox | Settings → Company, or `RESEND_API_KEY` |
+| Amazon SES **or** Resend | System emails (invites, password resets); backup sender for reps without a connected inbox | `SES_*` + `EMAIL_FROM` (see above), or `RESEND_API_KEY` / Settings → Company |
 | Cal.com / Calendly | Track booked demos | Settings → My demo booking link |
 | SerpAPI | Club search | `SERP_API_KEY` |
 
