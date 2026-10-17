@@ -12,7 +12,19 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const sql = postgres(process.env.DATABASE_URL, { max: 1, onnotice: () => {} });
+
+// libpq-only URL options (e.g. Neon's channel_binding) are sent to the server as settings by postgres.js and rejected.
+function pgUrl(url) {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("channel_binding");
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+const sql = postgres(pgUrl(process.env.DATABASE_URL), { max: 1, onnotice: () => {} });
 await migrate(drizzle(sql), { migrationsFolder: "drizzle" });
 await sql.end();
 console.log("Database migrations applied.");

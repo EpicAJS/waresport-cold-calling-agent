@@ -11,7 +11,19 @@ if (!process.argv.includes("--confirm")) {
   console.error("This inserts demo users, campaigns, emails and replies. Re-run with --confirm on an empty database.");
   process.exit(1);
 }
-const sql = postgres(process.env.DATABASE_URL, { max: 1, onnotice: () => {} });
+
+// libpq-only URL options (e.g. Neon's channel_binding) are sent to the server as settings by postgres.js and rejected.
+function pgUrl(url) {
+  try {
+    const u = new URL(url);
+    u.searchParams.delete("channel_binding");
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
+
+const sql = postgres(pgUrl(process.env.DATABASE_URL), { max: 1, onnotice: () => {} });
 const [{ n }] = await sql`select count(*)::int as n from users`;
 if (n > 0) {
   console.error("Refusing to seed: the database already has users. Use a fresh database for the demo.");
