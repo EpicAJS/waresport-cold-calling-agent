@@ -1,19 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getPhoneNumbers, savePhoneNumber } from "@/lib/store";
-import { randomUUID } from "crypto";
+import { NextResponse } from "next/server";
+import { asc } from "drizzle-orm";
+import { db, phoneNumbers } from "@/lib/db";
+import { authed } from "@/lib/auth";
+import { toE164 } from "@/lib/dispatcher";
 
-export async function GET() {
-  return NextResponse.json(getPhoneNumbers());
-}
+export const GET = authed(async () => {
+  return NextResponse.json(await db.select().from(phoneNumbers).orderBy(asc(phoneNumbers.createdAt)));
+});
 
-export async function POST(req: NextRequest) {
-  const body = await req.json();
-  const pn = {
-    id: randomUUID(),
-    label: body.label ?? "",
-    number: body.number ?? "",
-    created_at: new Date().toISOString(),
-  };
-  savePhoneNumber(pn);
+export const POST = authed(async (req) => {
+  const body = await req.json().catch(() => ({}));
+  const label = typeof body.label === "string" ? body.label.trim() : "";
+  const digits = typeof body.number === "string" ? body.number.replace(/\D/g, "") : "";
+  if (!label || digits.length < 10) return NextResponse.json({ error: "Label and a valid phone number are required." }, { status: 400 });
+  const [pn] = await db.insert(phoneNumbers).values({ label, number: toE164(digits) }).returning();
   return NextResponse.json(pn, { status: 201 });
-}
+}, { admin: true });

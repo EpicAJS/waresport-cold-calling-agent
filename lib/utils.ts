@@ -12,6 +12,13 @@ export function formatDuration(seconds: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+export function formatLocation(city?: string | null, state?: string | null): string {
+  const c = (city ?? "").trim();
+  const s = (state ?? "").trim();
+  if (!s || c.toLowerCase().endsWith(s.toLowerCase())) return c;
+  return c ? `${c}, ${s}` : s;
+}
+
 export function formatPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   if (digits.length === 10) {

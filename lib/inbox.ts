@@ -1,0 +1,26 @@
+import { campaigns, contacts, inboundMessages, mailboxes, users } from "@/lib/db";
+
+export const inboxSelect = {
+  id: inboundMessages.id,
+  fromName: inboundMessages.fromName,
+  fromEmail: inboundMessages.fromEmail,
+  subject: inboundMessages.subject,
+  snippet: inboundMessages.snippet,
+  receivedAt: inboundMessages.receivedAt,
+  intent: inboundMessages.intent,
+  intentSource: inboundMessages.intentSource,
+  confidence: inboundMessages.confidence,
+  aiSummary: inboundMessages.aiSummary,
+  suggestedReply: inboundMessages.suggestedReply,
+  suggestedReplySource: inboundMessages.suggestedReplySource,
+  status: inboundMessages.status,
+  snoozedUntil: inboundMessages.snoozedUntil,
+  contactId: inboundMessages.contactId,
+  clubName: contacts.clubName,
+  contactName: contacts.contactName,
+  phone: contacts.phone,
+  ownerId: inboundMessages.ownerId,
+  ownerName: users.name,
+  campaignName: campaigns.name,
+  mailboxEmail: mailboxes.email,
+};
